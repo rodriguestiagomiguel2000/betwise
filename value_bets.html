@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🎯 Value Bets</h1>
+    <p class="page-subtitle">Detect betting opportunities with positive expected value</p>
+  </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.win_rate }}%</div>
+    <div class="stat-label">Historical Win Rate</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.total_bets }}</div>
+    <div class="stat-label">Total Bets Analyzed</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ value_bets|length }}</div>
+    <div class="stat-label">Value Bets Found</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ stats.avg_odds }}</div>
+    <div class="stat-label">Avg Odds</div>
+  </div>
+</div>
+
+<!-- Value Bets List -->
+{% if value_bets %}
+<div class="value-bets-list">
+  {% for item in value_bets %}
+  {% set bet = item.bet %}
+  {% set value = item.value %}
+  <div class="value-bet-card">
+    <div class="value-bet-header">
+      <div class="value-bet-info">
+        <span class="value-bet-sport">⚽ {{ bet.sport or 'Unknown' }}</span>
+        <span class="value-bet-market">{{ bet.market_type or 'Single' }}</span>
+      </div>
+      <div class="value-bet-confidence">
+        <span class="confidence-badge {{ value.confidence|lower }}">
+          {{ value.confidence }} Confidence
+        </span>
+      </div>
+    </div>
+    
+    <div class="value-bet-details">
+      <div class="value-bet-main">
+        <div class="value-bet-odds">
+          <span class="label">Odds</span>
+          <span class="value">{{ bet.total_odds }}</span>
+        </div>
+        <div class="value-bet-stake">
+          <span class="label">Stake</span>
+          <span class="value">{{ bet.stake }}€</span>
+        </div>
+        <div class="value-bet-profit">
+          <span class="label">Potential Profit</span>
+          <span class="value">{% if bet.potential_return and bet.stake %}{{ (bet.potential_return - bet.stake)|round(2) }}€{% else %}N/A{% endif %}</span>
+        </div>
+      </div>
+      
+      <div class="value-bet-analysis">
+        <div class="analysis-item">
+          <span class="label">Value</span>
+          <span class="value positive">+{{ value.value_pct }}%</span>
+        </div>
+        <div class="analysis-item">
+          <span class="label">Real Prob</span>
+          <span class="value">{{ value.real_prob }}%</span>
+        </div>
+        <div class="analysis-item">
+          <span class="label">Implied Prob</span>
+          <span class="value">{{ value.implied_prob }}%</span>
+        </div>
+        <div class="analysis-item">
+          <span class="label">Expected Value</span>
+          <span class="value {% if value.expected_value > 0 %}positive{% else %}negative{% endif %}">
+            {{ value.expected_value }}%
+          </span>
+        </div>
+      </div>
+      
+      <div class="value-bet-recommendation">
+        <span class="recommendation-text">{{ value.recommendation }}</span>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="{{ url_for('edit_bet', bet_id=bet.id) }}" class="btn btn-secondary btn-sm">View Bet</a>
+          <button class="btn btn-primary btn-sm simulate-btn" data-bet-id="{{ bet.id }}">🎲 Simulate</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Simulação (escondido inicialmente) -->
+    <div class="simulation-result" id="simulation-{{ bet.id }}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
+        <span>🎲 <strong id="sim-wins-{{ bet.id }}">0</strong> Wins</span>
+        <span>💀 <strong id="sim-losses-{{ bet.id }}">0</strong> Losses</span>
+        <span>📊 Win Rate: <strong id="sim-rate-{{ bet.id }}">0%</strong></span>
+        <span>💰 Expected Profit: <strong id="sim-profit-{{ bet.id }}">0€</strong></span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-metrika">
+  <div style="text-align: center; padding: 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+    <h3 style="margin-bottom: 0.5rem;">No Value Bets Found</h3>
+    <p style="color: var(--text-muted);">
+      Based on your historical data, we couldn't find any value bets among your open bets.
+      <br>
+      Keep betting and we'll detect opportunities when they appear!
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.2rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.value-bets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.value-bet-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  transition: border-color 0.3s;
+}
+
+.value-bet-card:hover {
+  border-color: var(--accent-green);
+}
+
+.value-bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.value-bet-info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.value-bet-sport {
+  font-weight: 600;
+}
+
+.value-bet-market {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+.confidence-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.confidence-badge.high {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.confidence-badge.medium {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--accent-yellow);
+}
+
+.confidence-badge.low {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+.value-bet-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.value-bet-main {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.value-bet-main .label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.value-bet-main .value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.value-bet-analysis {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.analysis-item .label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+}
+
+.analysis-item .value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.analysis-item .value.positive {
+  color: var(--accent-green);
+}
+
+.analysis-item .value.negative {
+  color: var(--accent-red);
+}
+
+.value-bet-recommendation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recommendation-text {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .value-bet-main {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .value-bet-analysis {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .value-bet-recommendation {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
+
+<script>
+document.querySelectorAll('.simulate-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var betId = this.getAttribute('data-bet-id');
+    var resultDiv = document.getElementById('simulation-' + betId);
+    
+    if (resultDiv.style.display === 'block') {
+      resultDiv.style.display = 'none';
+      return;
+    }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div style="text-align:center; padding: 0.5rem;">⏳ Simulating...</div>';
+    
+    fetch('/value_bets/simulate/' + betId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (data.error) {
+        resultDiv.innerHTML = '<div style="color: var(--accent-red);">Error: ' + data.error + '</div>';
+        return;
+      }
+      
+      resultDiv.innerHTML = `
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem;">
+          <span>🎲 <strong>${data.wins}</strong> Wins</span>
+          <span>💀 <strong>${data.losses}</strong> Losses</span>
+          <span>📊 Win Rate: <strong>${data.win_rate_sim}%</strong></span>
+          <span>💰 Expected Profit: <strong>${data.expected_profit}€</strong></span>
+        </div>
+      `;
+    })
+    .catch(function(error) {
+      resultDiv.innerHTML = '<div style="color: var(--accent-red);">Error: ' + error + '</div>';
+    });
+  });
+});
+</script>
+{% endblock %}

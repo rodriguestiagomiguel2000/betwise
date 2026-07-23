@@ -1,0 +1,1236 @@
+/* --- RESET & DARK THEME --- */
+:root {
+  --bg-dark: #0a0b0d;
+  --bg-sidebar: #0e0f11;
+  --bg-card: #141518;
+  --bg-input: #1a1c20;
+  --border-color: #22252a;
+  --text-main: #f1f5f9;
+  --text-muted: #64748b;
+  --accent-green: #22c55e;
+  --accent-green-hover: #16a34a;
+  --accent-purple: #8b5cf6;
+  --accent-yellow: #eab308;
+  --accent-red: #ef4444;
+  --accent-orange: #f97316;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+body.metrika-body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar Lateral */
+.sidebar {
+  width: 240px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  z-index: 100;
+}
+
+.brand-logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.1rem; margin-bottom: 1.25rem; }
+.brand-accent { color: var(--accent-green); }
+
+.btn-new-bet {
+  display: block; width: 100%; text-align: center;
+  background: var(--accent-green); color: #000;
+  font-weight: 700; padding: 0.6rem; border-radius: var(--radius-sm);
+  text-decoration: none; margin-bottom: 1.5rem; transition: background 0.2s;
+}
+.btn-new-bet:hover { background: var(--accent-green-hover); }
+
+.sidebar-menu { display: flex; flex-direction: column; gap: 1.25rem; }
+.menu-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.menu-label { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 0.25rem; }
+
+.menu-item {
+  display: flex; align-items: center; justify-content: space-between;
+  color: #94a3b8; text-decoration: none; font-size: 0.85rem; font-weight: 500;
+  padding: 0.5rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.2s;
+}
+.menu-item:hover, .menu-item.active { background: var(--bg-card); color: var(--text-main); }
+.menu-item.active { border-left: 3px solid var(--accent-green); }
+
+/* Main Area & Topbar */
+.main-wrapper { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  height: 60px; border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; padding: 0 2rem; background: var(--bg-dark);
+}
+.search-box input {
+  background: var(--bg-card) !important; border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important; padding: 0.45rem 1rem; border-radius: 20px;
+  font-size: 0.8rem; width: 280px; outline: none;
+}
+.content-area { padding: 1.5rem 2rem; }
+
+/* Títulos & Cartões */
+.page-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+.page-subtitle { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem; }
+
+.card-metrika {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.card-title-sub { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+
+/* REGRAS RÍGIDAS PARA FORMULÁRIOS & INPUTS DO BROWSER */
+input[type="text"],
+input[type="number"],
+input[type="datetime-local"],
+select {
+  width: 100%;
+  background-color: var(--bg-input) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+  padding: 0.65rem 0.85rem !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 0.85rem !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+/* Grids & Forms */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group-custom { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+.form-group-custom label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+
+/* Botões do Metrika */
+.btn-metrika-green {
+  background: var(--accent-green); color: #000; font-weight: 700;
+  padding: 0.65rem 1.2rem; border-radius: var(--radius-sm); transition: background 0.2s;
+}
+.btn-metrika-green:hover { background: var(--accent-green-hover); }
+
+/* Layout da Página New Bet (2 Colunas) */
+.new-bet-layout { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; }
+
+.bet-type-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; background: var(--bg-input);
+  padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);
+}
+.btn-type {
+  background: transparent; border: none; color: var(--text-muted);
+  padding: 0.45rem; font-size: 0.8rem; font-weight: 600; border-radius: 4px;
+}
+.btn-type.active { background: var(--accent-green); color: #000; }
+
+.btn-metrika-vision {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 100%; background: var(--accent-purple); color: #fff; font-weight: 600;
+  font-size: 0.85rem; padding: 0.65rem; border-radius: var(--radius-sm);
+}
+
+.status-pills-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.status-pill {
+  background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted);
+  padding: 0.45rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
+}
+.status-pill.active.pill-pending { background: rgba(234, 179, 8, 0.2); color: var(--accent-yellow); border-color: var(--accent-yellow); }
+.status-pill.active.pill-won, .pill-won { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); border-color: var(--accent-green); }
+.status-pill.active.pill-lost, .pill-lost { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border-color: var(--accent-red); }
+
+/* Tabelas (History, Bookmakers, Bankrolls) */
+.table-metrika { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+.table-metrika th { color: var(--text-muted); font-weight: 600; padding: 0.75rem; border-bottom: 1px solid var(--border-color); }
+.table-metrika td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--border-color); }
+
+.profit-val { font-weight: 700; color: var(--text-main); }
+.profit-won { color: var(--accent-green) !important; }
+.profit-lost { color: var(--accent-red) !important; }
+/* ============================================================
+   SISTEMA GENÉRICO DE CARD / BOTÃO
+   (usado em bets.html, bet_detail.html)
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.icon { width: 20px; height: 20px; fill: var(--accent-green); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.btn:hover { filter: brightness(1.12); }
+.btn:active { transform: translateY(1px); }
+.btn-sm { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
+
+.btn-primary { background: var(--accent-green); color: #06110b; }
+.btn-secondary { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-color); }
+.btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.35); }
+.btn-danger:hover { background: var(--accent-red); color: #fff; }
+
+/* ============================================================
+   TABELAS "SOLTAS" (dentro de .table-responsive, sem .table-metrika)
+   ============================================================ */
+.table-responsive { overflow-x: auto; }
+.table-responsive table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.table-responsive th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+.table-responsive td {
+  padding: 0.8rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+.table-responsive tr:hover td { background: rgba(255, 255, 255, 0.015); }
+
+/* ============================================================
+   FORM GRID (bet_detail.html)
+   ============================================================ */
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+textarea {
+  width: 100%;
+  background-color: var(--bg-input) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+  padding: 0.65rem 0.85rem !important;
+  border-radius: var(--radius-sm) !important;
+  font-size: 0.85rem !important;
+  outline: none !important;
+  resize: vertical;
+  font-family: inherit;
+}
+@media (max-width: 720px) { .form-grid, .form-grid-2 { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   BADGES DE STATUS (select "badge" em bets.html)
+   ============================================================ */
+select.badge {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  padding: 0.35rem 1.6rem 0.35rem 0.75rem !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                     linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 0.8rem top 55%, right 0.55rem top 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.badge-open   { background-color: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
+.badge-won    { background-color: rgba(34, 197, 94, 0.15) !important;  color: var(--accent-green) !important; }
+.badge-lost   { background-color: rgba(239, 68, 68, 0.15) !important;  color: var(--accent-red) !important; }
+.badge-void   { background-color: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; }
+.badge-cashed_out { background-color: rgba(234, 179, 8, 0.15) !important; color: var(--accent-yellow) !important; }
+
+/* Pills extra que faltavam */
+.status-pill.pill-pending,
+.status-pill.pill-void,
+.status-pill.pill-cashout,
+.status-pill.pill-cashed_out {
+  background: rgba(234, 179, 8, 0.15); color: var(--accent-yellow); border-color: var(--accent-yellow);
+}
+.status-pill.pill-void { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: #94a3b8; }
+.status-pill.pill-cashout,
+.status-pill.pill-cashed_out { background: rgba(249, 115, 22, 0.15); color: var(--accent-orange); border-color: var(--accent-orange); }
+
+/* ============================================================
+   DASHBOARD (stats.html)
+   ============================================================ */
+.dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.header-actions { display: flex; gap: 0.6rem; }
+.select-metrika {
+  background: var(--bg-card) !important; border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important; padding: 0.5rem 0.9rem !important;
+  border-radius: var(--radius-sm) !important; font-size: 0.8rem !important;
+}
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+@media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+.kpi-card {
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  padding: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem;
+}
+.kpi-icon { font-size: 1.1rem; opacity: 0.8; }
+.kpi-value { font-size: 1.4rem; font-weight: 700; }
+.kpi-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.text-positive { color: var(--accent-green) !important; }
+.text-negative { color: var(--accent-red) !important; }
+
+.dashboard-row-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; }
+@media (max-width: 900px) { .dashboard-row-2 { grid-template-columns: 1fr; } }
+
+.chart-container-card { display: flex; flex-direction: column; }
+.card-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.card-title-bar h3 { font-size: 0.95rem; font-weight: 700; }
+.btn-group-sm { display: flex; gap: 0.3rem; background: var(--bg-input); padding: 3px; border-radius: var(--radius-sm); }
+.btn-toggle { background: transparent; color: var(--text-muted); font-size: 0.72rem; font-weight: 600; padding: 0.35rem 0.7rem; border-radius: 4px; }
+.btn-toggle.active { background: var(--accent-green); color: #06110b; }
+
+.performance-card { display: flex; flex-direction: column; }
+.performance-body { display: flex; align-items: center; gap: 1.5rem; margin-top: 0.5rem; }
+.donut-placeholder {
+  width: 96px; height: 96px; border-radius: 50%;
+  border: 10px solid var(--accent-green);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.donut-val { font-size: 1rem; font-weight: 700; }
+.perf-stats { display: flex; flex-direction: column; gap: 0.6rem; }
+.perf-stats > div { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
+.perf-stats strong { font-size: 1.1rem; }
+
+.recent-bets-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.bet-item-card { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; }
+.bet-item-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+.bet-title { font-weight: 600; font-size: 0.85rem; }
+.bet-date { font-size: 0.72rem; color: var(--text-muted); }
+.bet-item-details { display: flex; gap: 1rem; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+.bet-item-details strong { color: var(--text-main); }
+.font-bold { font-weight: 700; }
+.bet-item-tags { display: flex; gap: 0.4rem; }
+.tag { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px; }
+.tag-purple { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+.tag-green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+
+.sport-progress-list { display: flex; flex-direction: column; gap: 0.9rem; }
+.sport-row { display: flex; flex-direction: column; gap: 0.4rem; }
+.sport-info { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; }
+.progress-bar-bg { height: 6px; border-radius: 999px; background: var(--bg-input); overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--accent-green); border-radius: 999px; }
+
+/* ============================================================
+   BOOKMAKERS / BANKROLLS extras
+   ============================================================ */
+.bankroll-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1.25rem; align-items: start; }
+@media (max-width: 900px) { .bankroll-grid { grid-template-columns: 1fr; } }
+.card-section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+.form-metrika { display: flex; flex-direction: column; gap: 1rem; }
+.btn-metrika-submit { background: var(--accent-purple); color: #fff; font-weight: 700; padding: 0.65rem 1.2rem; border-radius: var(--radius-sm); }
+.btn-metrika-submit:hover { filter: brightness(1.1); }
+.link-green, .link-action { color: var(--accent-green); font-size: 0.8rem; font-weight: 600; text-decoration: none; }
+.link-green:hover, .link-action:hover { text-decoration: underline; }
+
+/* ============================================================
+   NOVA APOSTA / UPLOAD (upload.html)
+   ============================================================ */
+.new-bet-header { margin-bottom: 1.5rem; }
+.new-bet-title-container { display: flex; align-items: center; gap: 0.85rem; }
+.plus-icon-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent-green); color: #06110b;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
+}
+.section-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; margin-bottom: 0.6rem; display: block; }
+.field-hint { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+
+.card-header-sub { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1rem; }
+.card-header-sub h3 { font-size: 0.95rem; font-weight: 700; }
+.sub-text { font-size: 0.78rem; color: var(--text-muted); }
+
+.btn-add-leg { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--accent-green); font-size: 0.78rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); }
+.btn-add-leg:hover { border-color: var(--accent-green); }
+.leg-item { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; }
+.leg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+.leg-title { font-size: 0.8rem; font-weight: 700; color: var(--accent-purple); }
+.btn-remove-leg { background: transparent; color: var(--accent-red); font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.4rem; }
+
+.toggle-card { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--border-color); }
+.toggle-card:last-child { border-bottom: none; }
+.toggle-info { display: flex; align-items: center; gap: 0.75rem; }
+.toggle-icon { font-size: 1rem; width: 28px; height: 28px; border-radius: 50%; background: var(--bg-input); display: flex; align-items: center; justify-content: center; }
+.toggle-info strong { font-size: 0.85rem; }
+
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--bg-input); border: 1px solid var(--border-color);
+  border-radius: 999px; transition: 0.2s;
+}
+.switch .slider::before {
+  content: ""; position: absolute; height: 16px; width: 16px;
+  left: 3px; bottom: 2px; background: var(--text-muted);
+  border-radius: 50%; transition: 0.2s;
+}
+.switch input:checked + .slider { background: rgba(34, 197, 94, 0.25); border-color: var(--accent-green); }
+.switch input:checked + .slider::before { transform: translateX(18px); background: var(--accent-green); }
+
+.form-actions-bottom { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
+.btn-metrika-clear { background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-muted); font-weight: 600; padding: 0.65rem 1.3rem; border-radius: var(--radius-sm); }
+.btn-metrika-save { background: var(--accent-green); color: #06110b; font-weight: 700; padding: 0.65rem 1.6rem; border-radius: var(--radius-sm); }
+.btn-metrika-save:hover { filter: brightness(1.1); }
+
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.85rem; }
+.mb-4 { margin-bottom: 1.25rem; }
+
+/* style.css - Adicionar estilos para links de ação */
+.btn-link-danger {
+  background: transparent;
+  color: var(--accent-red);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-link-danger:hover {
+  text-decoration: underline;
+}
+
+.filter-form {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* style.css - Adicionar no final */
+
+/* Export Page */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.export-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  transition: border-color 0.3s ease;
+}
+
+.export-card:hover {
+  border-color: var(--accent-green);
+}
+
+.export-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.export-description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.export-meta {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.meta-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.btn-metrika-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-green);
+  color: #06110b;
+  font-weight: 700;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background 0.2s, transform 0.1s;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-metrika-export:hover {
+  background: var(--accent-green-hover);
+  transform: translateY(-1px);
+}
+
+.btn-metrika-export.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.75rem;
+  width: auto;
+  flex: 1;
+}
+
+.export-all {
+  border-color: var(--accent-purple);
+}
+
+.export-all:hover {
+  border-color: var(--accent-purple);
+}
+
+.export-all-buttons {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.export-all-buttons .btn-metrika-export {
+  background: var(--accent-purple);
+  color: #fff;
+}
+
+.export-all-buttons .btn-metrika-export:hover {
+  filter: brightness(1.1);
+}
+
+/* Export Info */
+.export-info {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.export-info-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.export-info-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.info-icon {
+  font-size: 1.2rem;
+}
+
+.export-info-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.export-info-content li {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-color);
+  line-height: 1.5;
+}
+
+.export-info-content li:last-child {
+  border-bottom: none;
+}
+
+.export-info-content li strong {
+  color: var(--text-main);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .export-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .export-all-buttons {
+    flex-direction: column;
+  }
+  
+  .export-all-buttons .btn-metrika-export {
+    width: 100%;
+  }
+}
+
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-green);
+    cursor: pointer;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+input[type="checkbox"]:checked {
+    accent-color: var(--accent-green);
+}
+
+/* Botão de apagar selecionados animado */
+#deleteSelectedBtn {
+    transition: all 0.3s ease;
+}
+
+#deleteSelectedBtn:hover {
+    transform: scale(1.02);
+}
+
+/* Modal */
+#deleteModal {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Tags para Freebet e Live */
+.tag-freebet {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--accent-yellow);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.tag-live {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+/* Bankroll Header */
+.bankroll-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Bankroll Stats Grid */
+.bankroll-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .bankroll-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Month Groups */
+.bankrolls-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.month-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.month-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.month-profit {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Bankroll Cards */
+.bankroll-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.bankroll-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+
+.bankroll-card:hover {
+  border-color: var(--accent-green);
+}
+
+.bankroll-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.bankroll-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.bankroll-initial {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.bankroll-card-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.75rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.stat-label-small {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bankroll-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bankroll-active {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Bankroll Card Link */
+.bankroll-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.bankroll-card-link:hover .bankroll-card {
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
+  transition: all 0.2s;
+}
+
+/* Bankroll Actions */
+.bankroll-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.tools-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  cursor: default;
+}
+
+/* Manage Funds Page */
+.manage-funds-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.balance-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.balance-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.balance-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.balance-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.quick-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .quick-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.quick-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.quick-stat-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.quick-stat-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Performance Stats */
+.performance-stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.perf-big-number {
+  text-align: center;
+  padding-right: 1.5rem;
+  border-right: 1px solid var(--border-color);
+}
+
+.perf-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.perf-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.perf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 1rem;
+  flex: 1;
+}
+
+.perf-value {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.perf-label-small {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Streaks */
+.streaks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.streak-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.streak-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* Bet Types */
+.bet-types-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.bet-type-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  text-align: center;
+}
+
+.bet-type-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.bet-type-profit {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.bet-type-stats {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Performance Grid */
+.performance-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .performance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Performance Card Modern */
+.performance-card-modern {
+  padding: 1.25rem;
+}
+
+.performance-modern {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.perf-main-number {
+  text-align: center;
+  min-width: 80px;
+}
+
+.perf-big {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.perf-big-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.perf-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem 1.5rem;
+  flex: 1;
+}
+
+.perf-stat-item {
+  text-align: center;
+}
+
+.perf-stat-value {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.perf-stat-label {
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Streaks Card Modern */
+.streaks-card {
+  padding: 1.25rem;
+}
+
+.streaks-modern {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 100%;
+}
+
+.streak-item {
+  text-align: center;
+}
+
+.streak-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.streak-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Text colors */
+.text-positive {
+  color: var(--accent-green) !important;
+}
+
+.text-negative {
+  color: var(--accent-red) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* style.css - Adicionar */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-left: auto;
+}
+
+.bankroll-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.2rem 0.5rem;
+}
+
+.bankroll-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.bankroll-dropdown {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-main) !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    padding: 0.2rem 0.3rem !important;
+    outline: none !important;
+    cursor: pointer;
+}
+
+.bankroll-dropdown option {
+    background: var(--bg-card);
+    color: var(--text-main);
+}
+
+.active-indicator {
+    color: var(--accent-green);
+    font-size: 0.6rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 60px;
+    padding: 0.5rem;
+  }
+  
+  .sidebar .brand-logo span,
+  .sidebar .menu-label,
+  .sidebar .menu-item span {
+    display: none;
+  }
+  
+  .sidebar .menu-item {
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+  
+  .btn-new-bet {
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+  
+  .main-wrapper {
+    margin-left: 60px;
+  }
+  
+  .topbar .search-box {
+    display: none;
+  }
+  
+  .content-area {
+    padding: 0.5rem;
+  }
+  
+  .kpi-grid,
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dashboard-row-2 {
+    grid-template-columns: 1fr;
+  }
+}

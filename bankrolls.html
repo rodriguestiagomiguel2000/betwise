@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Cabeçalho com estatísticas -->
+<div class="bankroll-header">
+  <div>
+    <h1 class="page-title">My Bankrolls</h1>
+    <p class="page-subtitle">Manage your betting funds</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{{ url_for('bankrolls_list') }}" class="btn btn-primary">+ Create bankroll</a>
+  </div>
+</div>
+
+<!-- Cards de estatísticas totais -->
+<div class="bankroll-stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">TOTAL BALANCE</div>
+    <div class="stat-value">{{ "%.2f"|format(total_balance) }}€</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">TOTAL PROFIT</div>
+    <div class="stat-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
+      {{ "%.2f"|format(total_profit) }}€
+      <span style="font-size: 0.75rem; opacity: 0.6;">
+        ({{ "%.1f"|format((total_profit / total_invested * 100) if total_invested > 0 else 0) }}%)
+      </span>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">TOTAL INVESTED</div>
+    <div class="stat-value">{{ "%.2f"|format(total_invested) }}€</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">TOTAL WITHDRAWN</div>
+    <div class="stat-value" style="color: var(--accent-orange);">{{ "%.2f"|format(total_withdrawn) }}€</div>
+  </div>
+</div>
+
+<!-- Bankrolls agrupados por mês -->
+<div class="bankrolls-grouped">
+  {% for month, month_data in bankrolls_by_month.items() %}
+  <div class="month-group">
+    <div class="month-header">
+      <h3 class="month-title">{{ month }}</h3>
+      <span class="month-profit {% if month_data.total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
+        {{ "%.2f"|format(month_data.total_profit) }}€
+      </span>
+    </div>
+    
+    <div class="bankroll-cards" id="bankroll-cards-{{ loop.index }}">
+      {% for bankroll in month_data.bankrolls %}
+      <div class="bankroll-card-wrapper" id="bankroll-{{ bankroll.id }}">
+        <!-- Card clicável para Funds -->
+        <a href="{{ url_for('manage_funds', roll_id=bankroll.id) }}" class="bankroll-card-link">
+          <div class="bankroll-card {% if bankroll.is_active %}active{% endif %}">
+            <div class="bankroll-card-header">
+              <div class="bankroll-name">
+                {{ bankroll.name }}
+                {% if bankroll.is_active %}
+                <span class="active-badge">● ATIVO</span>
+                {% endif %}
+              </div>
+              <div class="bankroll-initial">Initial: {{ "%.2f"|format(bankroll.starting_balance) }}€</div>
+            </div>
+            
+            <div class="bankroll-card-stats">
+              <div class="stat-item">
+                <span class="stat-number">{{ bankroll.bets_count }}</span>
+                <span class="stat-label-small">bets</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ "%.0f"|format(bankroll.win_rate) }}%</span>
+                <span class="stat-label-small">Win Rate</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-number">{{ "%.2f"|format(bankroll.avg_odds) }}</span>
+                <span class="stat-label-small">Avg Odds</span>
+              </div>
+            </div>
+            
+            <div class="bankroll-card-footer">
+              <div class="bankroll-active">
+                Active: {{ "%.2f"|format(bankroll.active_stake) }}€
+                <span style="color: var(--text-muted); font-size: 0.75rem;">
+                  Free: {{ bankroll.free_bets_count }}
+                </span>
+              </div>
+              <span class="link-green">Funds →</span>
+            </div>
+          </div>
+        </a>
+        
+        <!-- Botão Delete -->
+        <div style="margin-top: 0.5rem; text-align: center;">
+          {% if bankroll.bets_count > 0 %}
+            <span class="btn-delete-bankroll disabled" style="display: inline-block; width: 100%;">
+              🗑️ Delete Bankroll ({{ bankroll.bets_count }} bets)
+            </span>
+          {% else %}
+            <button type="button" 
+                    class="btn-delete-bankroll" 
+                    data-id="{{ bankroll.id }}"
+                    data-name="{{ bankroll.name }}"
+                    onclick="deleteBankroll(this)"
+                    style="width: 100%;">
+              🗑️ Delete Bankroll
+            </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card-metrika">
+    <p style="text-align:center; color: var(--text-muted); padding: 2rem;">
+      No bankrolls yet. <a href="{{ url_for('bankrolls_list') }}" class="link-green">Create your first one</a>
+    </p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Botões de ação -->
+<div class="bankroll-actions">
+  <a href="{{ url_for('bankrolls_list') }}" class="btn btn-secondary">+ Create bankroll</a>
+  <span class="tools-label">Tools</span>
+</div>
+
+<!-- Formulário para Criar Bankroll -->
+<div class="card-metrika" style="margin-top: 1.5rem;">
+  <h3 class="card-title-sub">Create Bankroll with Bookmaker Allocation</h3>
+  <form action="{{ url_for('bankrolls_list') }}" method="POST" id="createBankrollForm">
+    <div class="form-grid-2">
+      <div class="form-group-custom">
+        <label>Name</label>
+        <input type="text" name="name" placeholder="e.g. July 2026" required>
+      </div>
+      <div class="form-group-custom">
+        <label>Currency</label>
+        <input type="text" name="currency" value="EUR" required>
+      </div>
+    </div>
+    
+    <div class="form-group-custom">
+      <label>Total Starting Balance (€)</label>
+      <input type="number" step="0.01" name="starting_balance" id="totalStartingBalance" placeholder="0.00" required onchange="updateAllocationTotal()">
+    </div>
+    
+    <div class="form-group-custom">
+      <label>Allocate to Bookmakers</label>
+      <div id="bookmaker-allocations">
+        {% for book in bookmakers %}
+        <div class="allocation-row" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
+          <span style="min-width: 100px; font-weight: 600;">{{ book.name }}</span>
+          <input type="hidden" name="bookmaker_id[]" value="{{ book.id }}">
+          <input type="number" step="0.01" name="bookmaker_allocation[]" 
+                 class="bookmaker-allocation" placeholder="0.00" 
+                 style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem; border-radius: var(--radius-sm);"
+                 onchange="updateAllocationTotal()">
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted);">No bookmakers available. <a href="{{ url_for('bookmakers_list') }}" class="link-green">Add one first</a></p>
+        {% endfor %}
+      </div>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Allocate the total starting balance across bookmakers. Sum must equal total balance.</small>
+      <div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+        <span>Allocated: <strong id="allocatedTotal">0.00</strong>€ / <strong id="requiredTotal">0.00</strong>€</span>
+        <span id="allocationWarning" style="color: var(--accent-red); display: none; margin-left: 1rem;">⚠️ Not matching!</span>
+      </div>
+    </div>
+    
+    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;" id="createBtn">Create Bankroll</button>
+  </form>
+</div>
+
+<script>
+function updateAllocationTotal() {
+  var total = parseFloat(document.getElementById('totalStartingBalance').value) || 0;
+  var allocations = document.querySelectorAll('.bookmaker-allocation');
+  var allocated = 0;
+  
+  allocations.forEach(function(input) {
+    allocated += parseFloat(input.value) || 0;
+  });
+  
+  document.getElementById('allocatedTotal').textContent = allocated.toFixed(2);
+  document.getElementById('requiredTotal').textContent = total.toFixed(2);
+  
+  var warning = document.getElementById('allocationWarning');
+  var createBtn = document.getElementById('createBtn');
+  
+  if (Math.abs(allocated - total) > 0.01) {
+    warning.style.display = 'inline';
+    createBtn.disabled = true;
+    createBtn.style.opacity = '0.5';
+  } else {
+    warning.style.display = 'none';
+    createBtn.disabled = false;
+    createBtn.style.opacity = '1';
+  }
+}
+
+function deleteBankroll(button) {
+  var id = button.getAttribute('data-id');
+  var name = button.getAttribute('data-name');
+  
+  if (!confirm('Are you sure you want to delete bankroll "' + name + '"? This action cannot be undone!')) {
+    return;
+  }
+  
+  console.log('Deleting bankroll ID:', id);
+  
+  // Desabilitar o botão para evitar cliques duplos
+  button.disabled = true;
+  button.textContent = '⏳ Deleting...';
+  
+  fetch('/bankrolls/' + id + '/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  })
+  .then(function(response) {
+    console.log('Response status:', response.status);
+    // Recarregar a página para ver as mudanças
+    window.location.reload();
+  })
+  .catch(function(error) {
+    console.error('Error:', error);
+    alert('Error deleting bankroll. Please try again.');
+    button.disabled = false;
+    button.textContent = '🗑️ Delete Bankroll';
+  });
+}
+</script>
+
+<style>
+.bankroll-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.btn-delete-bankroll {
+  background: transparent;
+  color: var(--accent-red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-delete-bankroll:hover:not(.disabled) {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--accent-red);
+}
+
+.btn-delete-bankroll.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.bankroll-card.active {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+}
+
+.active-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-left: 0.5rem;
+  letter-spacing: 0.04em;
+}
+
+.bankroll-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.bankroll-card-link:hover .bankroll-card {
+  border-color: var(--accent-green);
+  transform: translateY(-2px);
+  transition: all 0.2s;
+}
+</style>
+{% endblock %}

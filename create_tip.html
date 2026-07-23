@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-metrika">
+  <div class="card-header">
+    <h3 class="card-title-sub">📝 Create Tip from Bet #{{ bet.id }}</h3>
+    <a href="{{ url_for('bets_list') }}" class="link-green">← Back to Bets</a>
+  </div>
+
+  <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <span><strong>Sport:</strong> {{ bet.sport or 'N/A' }}</span>
+      <span><strong>Market:</strong> {{ bet.market_type or 'N/A' }}</span>
+      <span><strong>Odds:</strong> {{ bet.total_odds or 'N/A' }}</span>
+      <span><strong>Stake:</strong> {{ bet.stake or 'N/A' }}€</span>
+      <span><strong>Status:</strong> {{ bet.status }}</span>
+    </div>
+  </div>
+
+  <form method="POST">
+    <div class="form-group-custom">
+      <label>Tip Title <span style="color: var(--accent-red);">*</span></label>
+      <input type="text" name="title" placeholder="e.g. Value bet on Over 2.5" required>
+    </div>
+
+    <div class="form-group-custom">
+      <label>Description</label>
+      <textarea name="description" rows="4" placeholder="Explain your reasoning for this tip..." style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.65rem; border-radius: var(--radius-sm); resize: vertical;"></textarea>
+    </div>
+
+    <div class="toggle-card">
+      <div class="toggle-info">
+        <span class="toggle-icon">🌐</span>
+        <div>
+          <strong>Public Tip</strong>
+          <p class="field-hint">Make this tip visible to the community</p>
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" name="is_public" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+      <a href="{{ url_for('bets_list') }}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Create Tip</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

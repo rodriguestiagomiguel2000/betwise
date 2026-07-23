@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tip-detail-container">
+  <!-- Tip Card -->
+  <div class="tip-detail-card">
+    <div class="tip-detail-header">
+      <div class="tip-author">
+        <span class="tip-avatar">👤</span>
+        <div>
+          <span class="tip-username">{{ tip.user.username }}</span>
+          <span class="tip-date">{{ tip.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+      </div>
+      <div class="tip-stats">
+        <span>❤️ {{ tip.likes }}</span>
+        <span>👁️ {{ tip.views }}</span>
+        <span class="tip-status {% if tip.is_public %}public{% else %}private{% endif %}">
+          {{ 'Public' if tip.is_public else 'Private' }}
+        </span>
+      </div>
+    </div>
+
+    <h2 class="tip-detail-title">{{ tip.title }}</h2>
+    <p class="tip-detail-description">{{ tip.description or 'No description provided.' }}</p>
+
+    <div class="tip-bet-info">
+      <h4>📊 Related Bet</h4>
+      <div class="bet-info-grid">
+        <div><strong>Sport:</strong> {{ tip.bet.sport or 'N/A' }}</div>
+        <div><strong>Market:</strong> {{ tip.bet.market_type or 'N/A' }}</div>
+        <div><strong>Odds:</strong> {{ tip.bet.total_odds or 'N/A' }}</div>
+        <div><strong>Stake:</strong> {{ tip.bet.stake or 'N/A' }}€</div>
+        <div><strong>Status:</strong> {{ tip.bet.status }}</div>
+      </div>
+      <a href="{{ url_for('edit_bet', bet_id=tip.bet_id) }}" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem;">View Full Bet Details</a>
+    </div>
+
+    <div class="tip-actions">
+      <button class="btn btn-primary like-btn" data-tip-id="{{ tip.id }}">❤️ Like</button>
+      {% if tip.user_id == current_user.id %}
+      <form method="post" action="{{ url_for('delete_tip', tip_id=tip.id) }}" style="display: inline;">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this tip?')">🗑️ Delete</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('tips_feed') }}" class="btn btn-secondary">← Back to Feed</a>
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  <div class="comments-section">
+    <h3>💬 Comments</h3>
+    
+    <form method="POST" action="{{ url_for('add_comment', tip_id=tip.id) }}" class="comment-form">
+      <div class="form-group">
+        <textarea name="content" placeholder="Write a comment..." rows="2" required style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.65rem; border-radius: var(--radius-sm); resize: vertical;"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+    </form>
+
+    <div class="comments-list">
+      {% for comment in comments %}
+      <div class="comment-item">
+        <div class="comment-author">
+          <span class="comment-avatar">👤</span>
+          <span class="comment-username">{{ comment.user.username }}</span>
+          <span class="comment-date">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <p class="comment-content">{{ comment.content }}</p>
+      </div>
+      {% else %}
+      <p style="color: var(--text-muted); padding: 1rem 0; text-align: center;">No comments yet. Be the first to comment!</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+.tip-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.tip-detail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tip-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tip-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tip-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.tip-username {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.tip-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.tip-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.tip-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.tip-status.public {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.tip-status.private {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+.tip-detail-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.tip-detail-description {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.tip-bet-info {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.tip-bet-info h4 {
+  margin-bottom: 0.75rem;
+}
+
+.bet-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.tip-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.comments-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.comments-section h3 {
+  margin-bottom: 1rem;
+}
+
+.comment-form {
+  margin-bottom: 1.5rem;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.comment-item {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.comment-avatar {
+  font-size: 0.9rem;
+}
+
+.comment-username {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.comment-date {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.comment-content {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding-left: 1.5rem;
+}
+</style>
+
+<script>
+document.querySelectorAll('.like-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var tipId = this.getAttribute('data-tip-id');
+    fetch('/tips/' + tipId + '/like', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      var stats = document.querySelector('.tip-stats');
+      if (stats) {
+        var likeSpan = stats.querySelector('span:first-child');
+        if (likeSpan) {
+          likeSpan.textContent = '❤️ ' + data.likes;
+        }
+      }
+      btn.textContent = '❤️ ' + data.likes;
+    });
+  });
+});
+</script>
+{% endblock %}
