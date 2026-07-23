@@ -45,6 +45,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Adiciona estas linhas para debug
+print(f"DEBUG: GEMINI_API_KEY = {'*' * len(GEMINI_API_KEY) if GEMINI_API_KEY else 'NOT SET'}")
+print(f"DEBUG: All environment variables: {list(os.environ.keys())}")
+
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set in .env or environment variables")
 
