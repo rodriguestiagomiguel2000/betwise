@@ -3280,6 +3280,98 @@ def unsubscribe_push():
     db.session.commit()
     return jsonify({'status': 'success'})
 
+# ===== CRIAR TABELAS E UTILIZADORES PADRÃO =====
+with app.app_context():
+    migrate_database()
+    db.create_all()
+    
+    # ===== CRIAR UTILIZADORES A PARTIR DE VARIÁVEIS DE AMBIENTE =====
+    # Utilizador Admin
+    admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
+    admin_email = os.environ.get('ADMIN_EMAIL', 'admin@betwise.com')
+    admin_password = os.environ.get('ADMIN_PASSWORD')
+    
+    # Utilizador normal (tiago32rodriguez)
+    user_username = os.environ.get('USER_USERNAME', 'tiago32rodriguez')
+    user_email = os.environ.get('USER_EMAIL', 'tiago32rodriguez@betwise.com')
+    user_password = os.environ.get('USER_PASSWORD')
+    
+    # Criar admin
+    if admin_password:
+        admin = User.query.filter_by(username=admin_username).first()
+        if not admin:
+            admin = User(
+                username=admin_username,
+                email=admin_email,
+                password_hash=generate_password_hash(admin_password),
+                is_admin=True,
+                is_active=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print(f"✅ Admin criado: {admin_username}")
+        else:
+            print(f"✅ Admin já existe: {admin_username}")
+    else:
+        print("⚠️ ADMIN_PASSWORD não definida. Admin não criado.")
+    
+    # Criar utilizador normal
+    if user_password:
+        user = User.query.filter_by(username=user_username).first()
+        if not user:
+            user = User(
+                username=user_username,
+                email=user_email,
+                password_hash=generate_password_hash(user_password),
+                is_admin=True,  # Podes mudar para False se quiseres
+                is_active=True
+            )
+            db.session.add(user)
+            db.session.commit()
+            print(f"✅ Utilizador criado: {user_username}")
+        else:
+            print(f"✅ Utilizador já existe: {user_username}")
+    else:
+        print(f"⚠️ USER_PASSWORD não definida. Utilizador {user_username} não criado.")
+
+    # Verificar se há dados sem user_id e associar ao admin
+    try:
+        admin = User.query.filter_by(username='admin').first()
+        if admin:
+            # Atualizar bankrolls sem user_id
+            bankrolls = Bankroll.query.filter(Bankroll.user_id.is_(None)).all()
+            for b in bankrolls:
+                b.user_id = admin.id
+            # Atualizar bookmakers sem user_id
+            bookmakers = Bookmaker.query.filter(Bookmaker.user_id.is_(None)).all()
+            for b in bookmakers:
+                b.user_id = admin.id
+            # Atualizar bets sem user_id
+            bets = Bet.query.filter(Bet.user_id.is_(None)).all()
+            for b in bets:
+                b.user_id = admin.id
+            db.session.commit()
+            if bankrolls or bookmakers or bets:
+                print(f"✅ Associados {len(bankrolls)} bankrolls, {len(bookmakers)} bookmakers, {len(bets)} bets ao admin")
+    except Exception as e:
+        print(f"⚠️ Erro ao associar dados ao admin: {e}")
+        db.session.rollback()
+    
+    # Se houver apenas um bankroll, definir como ativo
+    admin_user = User.query.filter_by(username='admin').first()
+    if admin_user:
+        bankrolls = Bankroll.query.filter_by(user_id=admin_user.id).all()
+        if len(bankrolls) == 1:
+            bankroll = bankrolls[0]
+            if bankroll and not bankroll.is_active:
+                bankroll.is_active = True
+                db.session.commit()
+                print(f"✅ Bankroll '{bankroll.name}' definido como ativo.")
+    
+    print(f"✅ Total de bankrolls: {Bankroll.query.count()}")
+    print(f"✅ Total de bookmakers: {Bookmaker.query.count()}")
+    print(f"✅ Total de bets: {Bet.query.count()}")
+
 # ===== INICIALIZAÇÃO DA APP =====
 if __name__ == "__main__":
     debug = os.environ.get('FLASK_DEBUG', 'False') == 'True'
