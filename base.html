@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{{ APP_NAME }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="{{ APP_COLOR }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="{{ APP_NAME }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+</head>
+<body class="metrika-body">
+
+  <!-- ===== MOBILE HEADER ===== -->
+  <header class="mobile-header">
+    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <span class="mobile-brand">{{ APP_LOGO }} {{ APP_NAME }}</span>
+    <a href="{{ url_for('upload') }}" class="mobile-actions" aria-label="New bet">
+      +
+    </a>
+  </header>
+  
+  <!-- ===== OVERLAY PARA FECHAR MENU MOBILE ===== -->
+  <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="brand-logo">
+      <span>{{ APP_LOGO }}</span>
+      <span>{{ APP_NAME }}</span>
+    </div>
+
+    <a href="{{ url_for('upload') }}" class="btn-new-bet">+ New bet</a>
+
+    <div class="sidebar-menu">
+      <div class="menu-group">
+        <span class="menu-label">BET MANAGEMENT</span>
+        <a href="{{ url_for('stats') }}" class="menu-item {% if request.endpoint == 'stats' %}active{% endif %}">📊 Dashboard</a>
+        <a href="{{ url_for('upload') }}" class="menu-item {% if request.endpoint == 'upload' %}active{% endif %}">➕ New bet</a>
+        <a href="{{ url_for('bets_list') }}" class="menu-item {% if request.endpoint == 'bets_list' %}active{% endif %}">📜 History</a>
+        <a href="{{ url_for('bankrolls_list') }}" class="menu-item {% if request.endpoint == 'bankrolls_list' %}active{% endif %}">🏦 My Bankrolls</a>
+      </div>
+
+      <div class="menu-group">
+        <span class="menu-label">COMMUNITY</span>
+        <a href="{{ url_for('tips_feed') }}" class="menu-item {% if request.endpoint == 'tips_feed' %}active{% endif %}">📊 Tips Feed</a>
+        <a href="{{ url_for('my_tips') }}" class="menu-item {% if request.endpoint == 'my_tips' %}active{% endif %}">📝 My Tips</a>
+      </div>
+
+      <div class="menu-group">
+        <span class="menu-label">TOOLS</span>
+        <a href="{{ url_for('bookmakers_list') }}" class="menu-item {% if request.endpoint == 'bookmakers_list' %}active{% endif %}">🏠 Bookmakers</a>
+        <a href="{{ url_for('value_bets') }}" class="menu-item {% if request.endpoint == 'value_bets' %}active{% endif %}">🎯 Value Bets</a>
+        <a href="{{ url_for('export_all') }}" class="menu-item {% if request.endpoint == 'export_all' %}active{% endif %}">📤 Export Data</a>
+        <a href="{{ url_for('import_data') }}" class="menu-item {% if request.endpoint == 'import_data' %}active{% endif %}">📥 Import Data</a>
+      </div>
+
+      {% if current_user.is_authenticated and current_user.is_admin %}
+      <div class="menu-group">
+        <span class="menu-label">ADMIN</span>
+        <a href="{{ url_for('admin_dashboard') }}" class="menu-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">👑 Admin</a>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="search-box">
+        <input type="text" placeholder="Search pages, bankrolls... Ctrl+K">
+      </div>
+      <div class="topbar-right">
+        <!-- Dropdown de Bankroll Ativo -->
+        <div class="bankroll-selector">
+          <span class="bankroll-label">Bankroll:</span>
+          <select id="activeBankrollSelect" class="bankroll-dropdown" onchange="changeActiveBankroll(this.value)">
+            {% for b in all_bankrolls_global %}
+            <option value="{{ b.id }}" {% if active_bankroll and active_bankroll.id == b.id %}selected{% endif %}>
+              {{ b.name }}
+            </option>
+            {% endfor %}
+          </select>
+          {% if active_bankroll %}
+          <span class="active-indicator" title="Active bankroll: {{ active_bankroll.name }}">●</span>
+          {% endif %}
+        </div>
+        
+        <!-- User Menu -->
+        <div class="user-menu">
+          {% if current_user.is_authenticated %}
+            <span class="user-name">👋 {{ current_user.username }}</span>
+            <a href="{{ url_for('profile') }}" class="user-link">Profile</a>
+            <a href="{{ url_for('logout') }}" class="user-link logout-link">Logout</a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="user-link">Login</a>
+            <a href="{{ url_for('register') }}" class="user-link register-link">Register</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    <main class="content-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+  // ============================================================
+  // MOBILE MENU
+  // ============================================================
+  function toggleMobileMenu() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    
+    if (!sidebar) return;
+    
+    sidebar.classList.toggle('open');
+    
+    if (overlay) {
+      overlay.classList.toggle('active');
+    }
+    
+    // Prevenir scroll do body quando menu aberto
+    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+  }
+
+  function closeMobileMenu() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Fechar menu ao clicar fora (já está no overlay via onclick)
+  // Fechar menu com tecla ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeMobileMenu();
+    }
+  });
+
+  // Fechar menu ao clicar num link de navegação
+  document.addEventListener('DOMContentLoaded', function() {
+    var menuLinks = document.querySelectorAll('.sidebar .menu-item, .sidebar .btn-new-bet');
+    menuLinks.forEach(function(link) {
+      link.addEventListener('click', function() {
+        // Pequeno delay para garantir que a navegação acontece
+        setTimeout(closeMobileMenu, 150);
+      });
+    });
+  });
+
+  // ============================================================
+  // CHANGE ACTIVE BANKROLL
+  // ============================================================
+  function changeActiveBankroll(bankrollId) {
+    if (!bankrollId) return;
+    
+    fetch('/bankrolls/' + bankrollId + '/set_active', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+    .then(function(response) {
+        if (response.redirected) {
+            window.location.href = response.url;
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(function(error) {
+        console.error('Error:', error);
+        alert('Error changing active bankroll.');
+    });
+  }
+
+  // ============================================================
+  // SERVICE WORKER (PWA)
+  // ============================================================
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/static/sw.js')
+        .then(function(reg) {
+          console.log('✅ Service Worker registered!');
+        })
+        .catch(function(err) {
+          console.log('❌ Service Worker registration failed:', err);
+        });
+    });
+  }
+  </script>
+
+</body>
+</html>
