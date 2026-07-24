@@ -1597,3 +1597,390 @@ input[type="checkbox"]:checked {
         font-size: 0.7rem;
     }
 }
+
+/* ===== PWA MOBILE FIXES ===== */
+@media (max-width: 768px) {
+    /* Topbar mais compacto */
+    .topbar {
+        height: 48px;
+        padding: 0 0.5rem;
+    }
+    
+    .search-box {
+        display: none;
+    }
+    
+    .topbar-right {
+        gap: 0.3rem;
+        flex: 1;
+        justify-content: flex-end;
+    }
+    
+    .bankroll-selector {
+        padding: 0.1rem 0.3rem;
+        font-size: 0.55rem;
+        max-width: 120px;
+    }
+    
+    .bankroll-label {
+        display: none;
+    }
+    
+    .bankroll-dropdown {
+        font-size: 0.55rem !important;
+        max-width: 70px;
+    }
+    
+    .user-name {
+        display: none;
+    }
+    
+    .user-link {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
+    }
+    
+    /* Sidebar compacta */
+    .sidebar {
+        width: 56px;
+        padding: 0.4rem 0.3rem;
+    }
+    
+    .brand-logo span:not(:first-child) {
+        display: none;
+    }
+    
+    .brand-logo {
+        font-size: 1.2rem;
+        justify-content: center;
+        padding: 0.2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-new-bet {
+        font-size: 0.5rem;
+        padding: 0.25rem;
+    }
+    
+    .menu-label {
+        display: none;
+    }
+    
+    .menu-item {
+        justify-content: center;
+        font-size: 1.1rem;
+        padding: 0.4rem;
+    }
+    
+    .menu-item span {
+        display: none;
+    }
+    
+    .menu-item.active {
+        border-left: none;
+        background: rgba(34, 197, 94, 0.15);
+    }
+    
+    .main-wrapper {
+        margin-left: 56px;
+    }
+    
+    .content-area {
+        padding: 0.5rem;
+    }
+    
+    .card-metrika {
+        padding: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+    
+    .page-title {
+        font-size: 1.1rem;
+    }
+    
+    .page-subtitle {
+        font-size: 0.7rem;
+    }
+    
+    /* KPIs mobile */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .kpi-card {
+        padding: 0.6rem;
+    }
+    
+    .kpi-value {
+        font-size: 1rem;
+    }
+    
+    .kpi-label {
+        font-size: 0.55rem;
+    }
+    
+    /* Dashboard rows */
+    .dashboard-row-2 {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .insight-card {
+        padding: 0.5rem;
+    }
+    
+    .insight-value {
+        font-size: 0.7rem;
+    }
+    
+    /* Tabelas */
+    .table-responsive {
+        overflow-x: auto;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .table-metrika {
+        font-size: 0.65rem;
+    }
+    
+    .table-metrika th,
+    .table-metrika td {
+        padding: 0.3rem 0.4rem;
+        white-space: nowrap;
+    }
+    
+    /* Botões */
+    .btn {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.55rem;
+        padding: 0.15rem 0.3rem;
+    }
+    
+    /* Formulários */
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+    
+    .form-group-custom input,
+    .form-group-custom select {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* Recent bets */
+    .bet-item-card {
+        padding: 0.4rem;
+    }
+    
+    .bet-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .bet-title {
+        font-size: 0.75rem;
+    }
+    
+    .bet-date {
+        font-size: 0.55rem;
+    }
+    
+    .bet-item-details {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        font-size: 0.65rem;
+    }
+    
+    .tag {
+        font-size: 0.5rem;
+        padding: 0.1rem 0.3rem;
+    }
+    
+    /* Bankrolls */
+    .bankroll-cards {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+    
+    .bankroll-card {
+        padding: 0.5rem;
+    }
+    
+    .bankroll-name {
+        font-size: 0.75rem;
+    }
+    
+    /* Profile */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .profile-stat-card {
+        padding: 0.6rem;
+    }
+    
+    .profile-stat-value {
+        font-size: 1rem;
+    }
+    
+    /* Auth pages */
+    .auth-card {
+        padding: 1.25rem;
+        margin: 0.5rem;
+    }
+    
+    .auth-logo h1 {
+        font-size: 1.2rem;
+    }
+    
+    /* Performance */
+    .performance-body {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .donut-placeholder {
+        width: 64px;
+        height: 64px;
+        border-width: 6px;
+    }
+    
+    .donut-val {
+        font-size: 0.7rem;
+    }
+    
+    .perf-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.2rem 0.5rem;
+    }
+    
+    .perf-stats > div {
+        font-size: 0.6rem;
+    }
+    
+    .perf-stats strong {
+        font-size: 0.75rem;
+    }
+    
+    /* Balance card */
+    .balance-value {
+        font-size: 1.8rem;
+    }
+    
+    /* Quick stats */
+    .quick-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.3rem;
+    }
+    
+    .quick-stat {
+        padding: 0.4rem;
+    }
+    
+    .quick-stat-value {
+        font-size: 0.8rem;
+    }
+    
+    /* Export */
+    .export-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .export-all-buttons {
+        flex-direction: column;
+    }
+    
+    /* Bankroll stats grid */
+    .bankroll-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .stat-card {
+        padding: 0.6rem;
+    }
+    
+    .stat-value {
+        font-size: 1rem;
+    }
+}
+
+/* Muito pequeno */
+@media (max-width: 400px) {
+    .sidebar {
+        width: 44px;
+        padding: 0.2rem;
+    }
+    
+    .main-wrapper {
+        margin-left: 44px;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.2rem;
+    }
+    
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .perf-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .bankroll-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bankroll-dropdown {
+        max-width: 50px;
+        font-size: 0.5rem !important;
+    }
+    
+    .user-link {
+        font-size: 0.5rem;
+        padding: 0.1rem 0.2rem;
+    }
+    
+    .btn-new-bet {
+        font-size: 0.45rem;
+        padding: 0.15rem;
+    }
+    
+    .page-title {
+        font-size: 0.9rem;
+    }
+    
+    .content-area {
+        padding: 0.3rem;
+    }
+    
+    .card-metrika {
+        padding: 0.4rem;
+        margin-bottom: 0.4rem;
+    }
+}
