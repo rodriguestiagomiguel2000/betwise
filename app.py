@@ -2587,14 +2587,48 @@ from flask import send_file, make_response
 @app.route("/export/bets")
 @login_required
 def export_bets():
-    bets = Bet.query.filter_by(user_id=current_user.id).order_by(Bet.placed_at.desc()).all()
+    # Obter o bankroll_id da query string
+    bankroll_id = request.args.get('bankroll_id', '')
+    
+    # Base da query
+    query = Bet.query.filter_by(user_id=current_user.id)
+    
+    # Filtrar por bankroll se especificado
+    bankroll_name = None
+    if bankroll_id and bankroll_id.isdigit():
+        bankroll = Bankroll.query.filter_by(id=int(bankroll_id), user_id=current_user.id).first()
+        if bankroll:
+            query = query.filter_by(bankroll_id=int(bankroll_id))
+            bankroll_name = bankroll.name
+    
+    bets = query.order_by(Bet.placed_at.desc()).all()
+    
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "Bookmaker", "Bankroll", "Sport", "Market Type", "Total Odds", "Stake", "Potential Return", "Currency", "Status", "Placed At", "Notes"])
+    
+    # Cabeçalhos
+    writer.writerow([
+        "ID", 
+        "Bookmaker", 
+        "Bankroll ID",
+        "Bankroll Name",
+        "Sport", 
+        "Market Type", 
+        "Total Odds", 
+        "Stake", 
+        "Potential Return", 
+        "Currency", 
+        "Status", 
+        "Placed At", 
+        "Notes"
+    ])
+    
+    # Dados
     for bet in bets:
         writer.writerow([
             bet.id,
             bet.bookmaker_obj.name if bet.bookmaker_obj else bet.bookmaker,
+            bet.bankroll.id if bet.bankroll else "",
             bet.bankroll.name if bet.bankroll else "",
             bet.sport,
             bet.market_type,
@@ -2606,12 +2640,20 @@ def export_bets():
             bet.placed_at.strftime("%Y-%m-%d %H:%M:%S") if bet.placed_at else "",
             bet.notes
         ])
+    
     output.seek(0)
+    
+    # Nome do ficheiro com bankroll
+    filename = f'bets_export'
+    if bankroll_name:
+        filename += f'_{bankroll_name.replace(" ", "_")}'
+    filename += f'_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+    
     return send_file(
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f'bets_export_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.csv'
+        download_name=filename
     )
 
 @app.route("/export/bankrolls")
@@ -2672,7 +2714,25 @@ def export_bookmakers():
 @app.route("/export/all")
 @login_required
 def export_all():
-    return render_template("export.html")
+    """Página de exportação com opções de bankroll"""
+    # Obter todos os bankrolls do utilizador
+    bankrolls = Bankroll.query.filter_by(user_id=current_user.id).order_by(Bankroll.name.asc()).all()
+    
+    # Obter estatísticas de bets por bankroll
+    bankroll_stats = {}
+    for b in bankrolls:
+        count = Bet.query.filter_by(user_id=current_user.id, bankroll_id=b.id).count()
+        bankroll_stats[b.id] = count
+    
+    # Total de bets
+    total_bets = Bet.query.filter_by(user_id=current_user.id).count()
+    
+    return render_template(
+        "export.html",
+        bankrolls=bankrolls,
+        bankroll_stats=bankroll_stats,
+        total_bets=total_bets
+    )
 
 # ===== IMPORT =====
 @app.route("/import", methods=["GET", "POST"])
@@ -2812,7 +2872,7 @@ def import_bankrolls(lines, user_id):
     return imported
 
 def import_bets(lines, user_id, bankroll_id):
-    """Importa bets a partir de um CSV"""
+    """Importa bets a partir de um CSV para um bankroll específico"""
     imported = 0
     reader = csv.DictReader(lines)
     
@@ -2877,7 +2937,7 @@ def import_bets(lines, user_id, bankroll_id):
             bet = Bet(
                 bookmaker=bookmaker_name,
                 bookmaker_id=bookmaker_id,
-                bankroll_id=bankroll_id,
+                bankroll_id=bankroll_id,  # <-- Associado ao bankroll selecionado
                 sport=row.get('Sport', '').strip(),
                 market_type=row.get('Market Type', '').strip(),
                 total_odds=total_odds,
