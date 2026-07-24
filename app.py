@@ -1,4 +1,4 @@
-# app.py - Parte 1: Imports, Configuração e Modelos
+# app.py - Parte 1: Imports, Configuração e Modelos (CORRIGIDA)
 import os
 import base64
 import time
@@ -13,6 +13,7 @@ from logging.handlers import RotatingFileHandler
 import sys
 from functools import wraps
 import traceback
+import re  # <-- ADICIONADO para substituir postgres://
 
 from flask import (
     Flask,
@@ -64,7 +65,22 @@ GEMINI_ENDPOINT = (
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-in-production")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(INSTANCE_PATH, "bets.db")
+
+# ===== CONFIGURAÇÃO DA BASE DE DADOS =====
+# 1. Tentar obter a URL do PostgreSQL a partir das variáveis de ambiente
+database_url = os.environ.get('DATABASE_URL')
+
+# 2. Se existir, usar PostgreSQL (Supabase)
+if database_url:
+    # O Supabase usa 'postgres://' mas SQLAlchemy precisa 'postgresql://'
+    database_url = re.sub(r'^postgres://', 'postgresql://', database_url)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    print("✅ Usando PostgreSQL (Supabase)")
+else:
+    # 3. Fallback para SQLite (local)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(INSTANCE_PATH, "bets.db")
+    print("⚠️ Usando SQLite (local)")
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
