@@ -55,7 +55,9 @@ print(f"DEBUG: GEMINI_API_KEY = {'*' * len(GEMINI_API_KEY) if GEMINI_API_KEY els
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set in .env or environment variables")
 
-GEMINI_MODEL = "gemini-1.5-flash"
+# Usar Gemini 3.1 Flash Lite (500 requests/dia)
+GEMINI_MODEL = "gemini-3.1-flash-lite"
+
 GEMINI_ENDPOINT = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
@@ -596,61 +598,96 @@ Rules:
 """
 
 def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: float = 2.0) -> Dict[str, Any]:
+    """Chama a API Gemini para extrair dados de um talão de apostas."""
+    
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY not configured. Please set it in .env file.")
+    
     prompt = build_gemini_prompt()
+
     with open(image_path, "rb") as f:
         image_bytes = f.read()
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
+
+    # ===== MODELO PRINCIPAL: Gemini 3.1 Flash Lite =====
+    # Tem 500 requests/dia, muito melhor que o 3.5 Flash (apenas 20)
+    models_to_try = [
+        "gemini-3.1-flash-lite",   # ⭐ Principal - 500 requests/dia
+        "gemini-2.0-flash",        # Fallback se o principal falhar
+        "gemini-2.5-flash",        # Outro fallback
+        "gemini-flash-latest",     # Último recurso
+    ]
+    
     payload = {
         "contents": [
             {
                 "parts": [
                     {"text": prompt},
-                    {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": image_b64,
-                        }
-                    },
+                    {"inline_data": {"mime_type": "image/jpeg", "data": image_b64}}
                 ]
             }
         ]
     }
+
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": GEMINI_API_KEY,
     }
+
     last_error = None
-    for attempt in range(max_retries):
-        try:
-            print("DEBUG GEMINI_ENDPOINT:", GEMINI_ENDPOINT)
-            resp = requests.post(GEMINI_ENDPOINT, headers=headers, json=payload, timeout=30)
-            print("DEBUG Gemini status code:", resp.status_code)
-            if resp.status_code == 503:
-                last_error = resp
-                delay = base_delay * (attempt + 1)
-                print(f"DEBUG Gemini 503, retrying in {delay} seconds...")
-                time.sleep(delay)
-                continue
-            resp.raise_for_status()
-            data = resp.json()
-            print("DEBUG Gemini raw response:", resp.text)
+
+    for model in models_to_try:
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        print(f"🔍 Tentando modelo: {model}")
+        
+        for attempt in range(max_retries):
             try:
-                text = data["candidates"][0]["content"]["parts"][0]["text"]
-            except (KeyError, IndexError) as e:
-                raise RuntimeError(f"Unexpected Gemini response structure: {data}") from e
-            cleaned = text.strip()
-            if cleaned.startswith("```"):
-                cleaned = cleaned.strip("`")
-                if cleaned.lower().startswith("json"):
-                    cleaned = cleaned[4:]
-                cleaned = cleaned.strip()
-            return json.loads(cleaned)
-        except requests.RequestException as e:
-            last_error = e
-            delay = base_delay * (attempt + 1)
-            print(f"DEBUG Gemini request exception ({e}), retrying in {delay} seconds...")
-            time.sleep(delay)
-    raise RuntimeError(f"Gemini API unavailable after {max_retries} attempts: {last_error}")
+                resp = requests.post(endpoint, headers=headers, json=payload, timeout=60)
+                
+                if resp.status_code == 200:
+                    print(f"✅ Modelo {model} funcionou!")
+                    data = resp.json()
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    
+                    cleaned = text.strip()
+                    if cleaned.startswith("```"):
+                        cleaned = cleaned.strip("`")
+                        if cleaned.lower().startswith("json"):
+                            cleaned = cleaned[4:]
+                        cleaned = cleaned.strip()
+                    
+                    result = json.loads(cleaned)
+                    return result
+                    
+                elif resp.status_code == 404:
+                    print(f"⚠️ Modelo {model} não encontrado (404)")
+                    break  # Tentar próximo modelo
+                    
+                elif resp.status_code == 429:
+                    print(f"⚠️ Limite de requests excedido (429) para {model}")
+                    delay = base_delay * (attempt + 1)
+                    print(f"   Aguardando {delay} segundos...")
+                    time.sleep(delay)
+                    continue
+                    
+                elif resp.status_code == 503:
+                    print(f"⚠️ Serviço indisponível (503), tentando novamente...")
+                    time.sleep(base_delay * (attempt + 1))
+                    continue
+                    
+                else:
+                    print(f"⚠️ Modelo {model} falhou: {resp.status_code}")
+                    if resp.text:
+                        print(f"   Resposta: {resp.text[:200]}")
+                    last_error = resp
+                    break
+                    
+            except requests.RequestException as e:
+                print(f"⚠️ Erro com modelo {model}: {e}")
+                last_error = e
+                break
+    
+    raise RuntimeError(f"Todos os modelos Gemini falharam. Último erro: {last_error}")
 
 def parse_bet_in_background(bet_id: int, image_path: str):
     from app import app, db, Bet, BetLeg
