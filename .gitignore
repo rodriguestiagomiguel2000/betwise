@@ -1,14 +1,17 @@
 # .gitignore
 __pycache__/
 *.pyc
-*.db
-*.sqlite
-*.sqlite3
-instance/
-.env
-*.log
-uploads/
-.DS_Store
 *.pyo
 *.pyd
 .Python
+*.sqlite
+*.sqlite3
+instance/
+uploads/
+logs/
+.env
+*.log
+*.db
+*.db-journal
+*.sqlite-journal
+backups/
