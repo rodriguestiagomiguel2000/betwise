@@ -119,12 +119,25 @@ login_manager.login_message = 'Please log in to access this page.'
 @app.context_processor
 def inject_app_config():
     """Disponibiliza variáveis da app em todos os templates"""
+    from datetime import datetime
+    
+    # Obter bankrolls do utilizador atual (se autenticado)
+    all_bankrolls = []
+    active_bankroll = None
+    
+    if current_user.is_authenticated:
+        all_bankrolls = Bankroll.query.filter_by(user_id=current_user.id).order_by(Bankroll.name.asc()).all()
+        active_bankroll = get_active_bankroll()
+    
     return {
         'APP_NAME': app.config['APP_NAME'],
         'APP_TAGLINE': app.config['APP_TAGLINE'],
         'APP_LOGO': app.config['APP_LOGO'],
         'APP_FAVICON': app.config['APP_FAVICON'],
-        'APP_COLOR': app.config['APP_COLOR']
+        'APP_COLOR': app.config['APP_COLOR'],
+        'all_bankrolls_global': all_bankrolls,
+        'active_bankroll': active_bankroll,
+        'now': datetime.utcnow()
     }
 
 # ===== USER LOADER =====
@@ -1846,9 +1859,11 @@ def bookmakers_list():
     if request.method == "POST":
         name = request.form.get("name")
         currency = request.form.get("currency") or "EUR"
+        
         if not name:
             flash("Bookmaker name is required.", "error")
             return redirect(url_for("bookmakers_list"))
+        
         new_bm = Bookmaker(
             name=name,
             currency=currency,
@@ -1877,40 +1892,14 @@ def bookmakers_list():
                 bankroll_id=target_bankroll.id,
                 bookmaker_id=book.id
             ).first()
+            
             if balance_record:
-                deposits = sum(
-                    tx.amount for tx in target_bankroll.transactions
-                    if tx.bookmaker_id == book.id and tx.type == "deposit"
-                )
-                withdrawals = sum(
-                    tx.amount for tx in target_bankroll.transactions
-                    if tx.bookmaker_id == book.id and tx.type == "withdrawal"
-                )
-                bets = Bet.query.filter_by(
-                    bookmaker_id=book.id,
-                    bankroll_id=target_bankroll.id
-                ).all()
-                bets_impact = 0.0
-                for bet in bets:
-                    if bet.is_freebet:
-                        if bet.status == "won" and bet.potential_return:
-                            bets_impact += bet.potential_return
-                        elif bet.status == "cashed_out" and bet.cashed_out_amount:
-                            bets_impact += bet.cashed_out_amount
-                    else:
-                        if bet.status == "won" and bet.potential_return and bet.stake:
-                            bets_impact += bet.potential_return - bet.stake
-                        elif bet.status == "lost" and bet.stake:
-                            bets_impact -= bet.stake
-                        elif bet.status == "cashed_out" and bet.cashed_out_amount and bet.stake:
-                            bets_impact += bet.cashed_out_amount - bet.stake
-                current = balance_record.starting_balance + deposits - withdrawals + bets_impact
-                if current < 0:
-                    current = 0.0
-                balance_record.current_balance = current
-                db.session.commit()
-                balances[book.id] = round(current, 2)
+                # ===== USAR O CURRENT_BALANCE GUARDADO =====
+                # NÃO RECALCULAR - usar o valor que foi guardado manualmente
+                balances[book.id] = round(balance_record.current_balance, 2)
+                print(f"Bookmaker {book.name}: current_balance = {balance_record.current_balance}")
             else:
+                # Criar balance record se não existir
                 new_balance = BankrollBookmakerBalance(
                     bankroll_id=target_bankroll.id,
                     bookmaker_id=book.id,
@@ -2029,12 +2018,14 @@ def update_bookmaker_balance_manual(book_id):
         flash("Balance cannot be negative.", "error")
         return redirect(url_for("bookmakers_list"))
     
+    # Buscar o balance record
     balance_record = BankrollBookmakerBalance.query.filter_by(
         bankroll_id=int(bankroll_id),
         bookmaker_id=book_id
     ).first()
     
     if not balance_record:
+        # Criar se não existir
         balance_record = BankrollBookmakerBalance(
             bankroll_id=int(bankroll_id),
             bookmaker_id=book_id,
@@ -2050,6 +2041,7 @@ def update_bookmaker_balance_manual(book_id):
         flash("No change in balance.", "info")
         return redirect(url_for("bookmakers_list", bankroll_id=bankroll_id))
     
+    # ATUALIZAR DIRETAMENTE O CURRENT_BALANCE
     balance_record.current_balance = new_balance
     db.session.commit()
     
