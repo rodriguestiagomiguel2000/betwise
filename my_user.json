@@ -1,0 +1,7 @@
+{
+  "username": "tiago32rodriguez",
+  "email": "rodrigues.tiagomiguel@gmail.com",
+  "password_hash": "scrypt:32768:8:1$heLQ5dxFDH7fPEnh$e5854c0aa3ac2a019ed6edaba84eb486f3376366276b9b2e580c2ae77726e5d5ca8e77ba7e1a1a7f3a33a48d025119b472a48ad51e4ac38c3e60c51b8e980da7",
+  "is_admin": false,
+  "is_active": true
+}
