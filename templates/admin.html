@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">👑 Admin Dashboard</h1>
+  <p class="page-subtitle">Monitor and manage your application</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="admin-stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ total_users }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Active Users (30d)</div>
+    <div class="stat-value">{{ active_users }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Bets</div>
+    <div class="stat-value">{{ total_bets }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Tips</div>
+    <div class="stat-value">{{ total_tips }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Bankrolls</div>
+    <div class="stat-value">{{ total_bankrolls }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Logs</div>
+    <div class="stat-value">{{ total_logs }}</div>
+  </div>
+</div>
+
+<!-- Action Stats -->
+<div class="card-metrika">
+  <h3 class="card-title-sub">📊 Actions Overview</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+    {% for action, count in action_stats %}
+    <span style="background: var(--bg-input); padding: 0.3rem 0.8rem; border-radius: 999px; font-size: 0.8rem;">
+      {{ action }}: <strong>{{ count }}</strong>
+    </span>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Logs -->
+<div class="card-metrika">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h3 class="card-title-sub">📋 Recent Activity</h3>
+    <a href="{{ url_for('admin_logs') }}" class="link-green">View all →</a>
+  </div>
+  
+  <div style="max-height: 400px; overflow-y: auto;">
+    <table class="table-metrika">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>User</th>
+          <th>Action</th>
+          <th>Details</th>
+          <th>IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td style="font-size: 0.75rem; color: var(--text-muted);">
+            {{ log.created_at.strftime('%d/%m %H:%M') }}
+          </td>
+          <td>
+            {% if log.user %}
+              <span style="color: var(--accent-green);">{{ log.user.username }}</span>
+            {% else %}
+              <span style="color: var(--text-muted);">Anonymous</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="action-tag" style="background: rgba(99, 102, 241, 0.15); color: #818cf8; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.7rem;">
+              {{ log.action }}
+            </span>
+          </td>
+          <td style="font-size: 0.8rem; color: var(--text-muted);">{{ log.details or '-' }}</td>
+          <td style="font-size: 0.7rem; color: var(--text-muted);">{{ log.ip_address or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" style="text-align:center; color: var(--text-muted); padding: 2rem;">No logs found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card-metrika">
+  <h3 class="card-title-sub">⚡ Quick Actions</h3>
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem;">
+    <a href="{{ url_for('admin_logs') }}" class="btn btn-secondary">View All Logs</a>
+    <a href="#" class="btn btn-secondary" onclick="downloadLogs()">📥 Download Logs</a>
+    <a href="#" class="btn btn-danger" onclick="clearLogs()">🧹 Clear Logs</a>
+  </div>
+</div>
+
+<script>
+function downloadLogs() {
+  fetch('/admin/logs/download')
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'logs.txt';
+      a.click();
+    });
+}
+
+function clearLogs() {
+  if (confirm('Are you sure you want to clear all logs?')) {
+    fetch('/admin/logs/clear', { method: 'POST' })
+      .then(response => location.reload());
+  }
+}
+</script>
+
+<style>
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.2rem;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.action-tag {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+{% endblock %}

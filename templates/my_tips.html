@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📝 My Tips</h1>
+    <p class="page-subtitle">Manage your betting tips</p>
+  </div>
+  <a href="{{ url_for('tips_feed') }}" class="btn btn-secondary">← Back to Feed</a>
+</div>
+
+{% if tips %}
+<div class="tips-feed">
+  {% for tip in tips %}
+  <div class="tip-card">
+    <div class="tip-header">
+      <div class="tip-author">
+        <span class="tip-avatar">👤</span>
+        <div>
+          <span class="tip-username">{{ tip.user.username }}</span>
+          <span class="tip-date">{{ tip.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+      </div>
+      <div class="tip-stats">
+        <span>❤️ {{ tip.likes }}</span>
+        <span>👁️ {{ tip.views }}</span>
+        <span class="tip-status {% if tip.is_public %}public{% else %}private{% endif %}">
+          {{ 'Public' if tip.is_public else 'Private' }}
+        </span>
+      </div>
+    </div>
+    
+    <div class="tip-content">
+      <h3 class="tip-title">{{ tip.title }}</h3>
+      <p class="tip-description">{{ tip.description or 'No description provided.' }}</p>
+    </div>
+    
+    <div class="tip-footer">
+      <a href="{{ url_for('view_tip', tip_id=tip.id) }}" class="btn btn-secondary btn-sm">View Details</a>
+      <a href="{{ url_for('edit_bet', bet_id=tip.bet_id) }}" class="btn btn-secondary btn-sm">View Bet</a>
+      <form method="post" action="{{ url_for('delete_tip', tip_id=tip.id) }}" style="display: inline;">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this tip?')">🗑️ Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-metrika">
+  <p style="text-align:center; color: var(--text-muted); padding: 2rem;">
+    You haven't created any tips yet.
+    <br>
+    <a href="{{ url_for('bets_list') }}" class="link-green">Go to your bets and create a tip</a>
+  </p>
+</div>
+{% endif %}
+
+<style>
+/* Reutilizar estilos do tips_feed.html */
+.tips-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tip-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.tip-card:hover {
+  border-color: var(--accent-green);
+}
+
+.tip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.tip-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tip-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.tip-username {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.tip-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.tip-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  align-items: center;
+}
+
+.tip-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.tip-status.public {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+}
+
+.tip-status.private {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+}
+
+.tip-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tip-description {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.tip-footer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+</style>
+{% endblock %}

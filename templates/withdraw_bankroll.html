@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-metrika">
+  <div class="card-header">
+    <h3 class="card-title-sub">Withdraw from {{ bankroll.name }}</h3>
+    <a href="{{ url_for('bankrolls_list') }}" class="link-green">← Back</a>
+  </div>
+
+  <div style="margin-bottom: 1.5rem; padding: 0.75rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+    <span style="color: var(--text-muted);">Current Balance:</span>
+    <span style="color: var(--accent-green); font-weight: 700; font-size: 1.1rem;">{{ current_balance }} {{ bankroll.currency }}</span>
+  </div>
+
+  <form action="{{ url_for('withdraw_bankroll', roll_id=bankroll.id) }}" method="POST">
+    <div class="form-group-custom">
+      <label>Amount ({{ bankroll.currency }})</label>
+      <input type="number" step="0.01" name="amount" placeholder="0.00" required max="{{ current_balance }}">
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Maximum: {{ current_balance }} {{ bankroll.currency }}</small>
+    </div>
+
+    <div class="form-group-custom">
+      <label>Bookmaker (optional)</label>
+      <select name="bookmaker_id">
+        <option value="">Select Bookmaker (optional)</option>
+        {% for book in bookmakers %}
+        <option value="{{ book.id }}">{{ book.name }}</option>
+        {% endfor %}
+      </select>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Select a bookmaker to track where the withdrawal came from</small>
+    </div>
+
+    <div class="form-group-custom">
+      <label>Notes (optional)</label>
+      <input type="text" name="notes" placeholder="e.g. Withdrawal to bank account, etc.">
+    </div>
+
+    <button type="submit" class="btn-metrika-submit" style="background: var(--accent-orange);">Record Withdrawal</button>
+  </form>
+</div>
+{% endblock %}

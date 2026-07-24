@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="manage-funds-header">
+  <div>
+    <h1 class="page-title">Manage funds · {{ bankroll.name }}</h1>
+    <p class="page-subtitle">{{ bankroll.created_at.strftime('%B %Y') if bankroll.created_at else '' }}</p>
+  </div>
+  <a href="{{ url_for('bankrolls_list') }}" class="btn btn-secondary btn-sm">← Back to Bankrolls</a>
+</div>
+
+<!-- Current Balance -->
+<div class="balance-card">
+  <div class="balance-label">Current balance</div>
+  <div class="balance-value">{{ current_balance }}€</div>
+  <div class="balance-actions">
+    <button class="btn btn-primary btn-sm" onclick="openModal('deposit')">Add</button>
+    <button class="btn btn-secondary btn-sm" onclick="openModal('withdrawal')">Withdraw</button>
+    <button class="btn btn-secondary btn-sm" onclick="openTransferModal()">Transfer</button>
+  </div>
+</div>
+
+<!-- Quick Stats Grid -->
+<div class="quick-stats-grid">
+  <div class="quick-stat">
+    <span class="quick-stat-value">{{ win_rate }}%</span>
+    <span class="quick-stat-label">Win Rate</span>
+  </div>
+  <div class="quick-stat">
+    <span class="quick-stat-value {% if yield_pct >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ yield_pct }}%</span>
+    <span class="quick-stat-label">Yield</span>
+  </div>
+  <div class="quick-stat">
+    <span class="quick-stat-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ total_profit }}€</span>
+    <span class="quick-stat-label">Profit</span>
+  </div>
+  <div class="quick-stat">
+    <span class="quick-stat-value">{{ avg_odds }}</span>
+    <span class="quick-stat-label">Avg Odds</span>
+  </div>
+  <div class="quick-stat">
+    <span class="quick-stat-value">{{ avg_stake }}€</span>
+    <span class="quick-stat-label">Avg Stake</span>
+  </div>
+  <div class="quick-stat">
+    <span class="quick-stat-value">{{ bankroll.starting_balance }}€</span>
+    <span class="quick-stat-label">Initial Bank</span>
+  </div>
+</div>
+
+<!-- Profit Chart -->
+<div class="card-metrika">
+  <div class="card-title-bar">
+    <h3>Profit</h3>
+    <div class="btn-group-sm">
+      <button class="btn-toggle active" onclick="changeChartView('cumulative', this)">Cumulative</button>
+      <button class="btn-toggle" onclick="changeChartView('daily', this)">Daily</button>
+      <button class="btn-toggle" onclick="changeChartView('monthly', this)">Monthly</button>
+    </div>
+  </div>
+  <div style="height: 200px; width: 100%; position: relative;">
+    <canvas id="profitChart"></canvas>
+  </div>
+</div>
+
+<!-- Performance Row -->
+<div class="performance-grid">
+  <div class="card-metrika performance-card-modern">
+    <div class="card-title-bar">
+      <h3>Performance</h3>
+    </div>
+    <div class="performance-modern">
+      <div class="perf-main-number">
+        <span class="perf-big">{{ win_rate }}%</span>
+        <span class="perf-big-label">Won</span>
+      </div>
+      <div class="perf-stats-grid">
+        <div class="perf-stat-item">
+          <span class="perf-stat-value">{{ won_bets }}</span>
+          <span class="perf-stat-label">Won</span>
+        </div>
+        <div class="perf-stat-item">
+          <span class="perf-stat-value">{{ lost_bets }}</span>
+          <span class="perf-stat-label">Lost</span>
+        </div>
+        <div class="perf-stat-item">
+          <span class="perf-stat-value">{{ avg_odds }}</span>
+          <span class="perf-stat-label">Avg Odds</span>
+        </div>
+        <div class="perf-stat-item">
+          <span class="perf-stat-value">{{ avg_stake }}€</span>
+          <span class="perf-stat-label">Avg Stake</span>
+        </div>
+        <div class="perf-stat-item">
+          <span class="perf-stat-value {% if best_streak >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ best_streak }}</span>
+          <span class="perf-stat-label">Best Streak</span>
+        </div>
+        <div class="perf-stat-item">
+          <span class="perf-stat-value {% if current_streak >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ current_streak }}</span>
+          <span class="perf-stat-label">Current Streak</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-metrika streaks-card">
+    <div class="card-title-bar">
+      <h3>Streaks & Records</h3>
+    </div>
+    <div class="streaks-modern">
+      <div class="streak-item">
+        <span class="streak-value {% if best_streak >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ best_streak }}</span>
+        <span class="streak-label">Best performance</span>
+      </div>
+      <div class="streak-item">
+        <span class="streak-value {% if worst_streak >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ worst_streak }}</span>
+        <span class="streak-label">Worst Streak</span>
+      </div>
+      <div class="streak-item">
+        <span class="streak-value {% if current_streak >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ current_streak }}</span>
+        <span class="streak-label">Current Streak</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bet Types Row -->
+<div class="dashboard-row-2">
+  <div class="card-metrika">
+    <div class="card-title-bar">
+      <h3>Bet Types</h3>
+    </div>
+    <div class="bet-types-grid">
+      <div class="bet-type-card">
+        <span class="bet-type-label">Singles</span>
+        <span class="bet-type-profit {% if simple_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ simple_profit }}€</span>
+        <span class="bet-type-stats">{{ simple_won }} Won · {{ simple_lost }} Lost</span>
+      </div>
+      <div class="bet-type-card">
+        <span class="bet-type-label">Accumulators</span>
+        <span class="bet-type-profit {% if combined_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ combined_profit }}€</span>
+        <span class="bet-type-stats">{{ combined_won }} Won · {{ combined_lost }} Lost</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-metrika">
+    <div class="card-title-bar">
+      <h3>Single bets by sport</h3>
+    </div>
+    <div class="sport-progress-list">
+      {% if sport_stats %}
+        {% for sport, sport_data in sport_stats.items() %}
+        {% set total_profit_sum = sport_stats.values()|map(attribute='profit')|sum %}
+        {% if total_profit_sum != 0 %}
+          {% set bar_width = ((sport_data.profit / (total_profit_sum + 0.01) * 100)|abs|round|int) %}
+        {% else %}
+          {% set bar_width = 0 %}
+        {% endif %}
+        <div class="sport-row">
+          <div class="sport-info">
+            <span>⚽ {{ sport }}</span>
+            <span class="{% if sport_data.profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.2f"|format(sport_data.profit) }}€</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" data-width="{{ bar_width }}"></div>
+          </div>
+          <div style="font-size:0.65rem; color:var(--text-muted);">{{ sport_data.count }} bets | {{ "%.2f"|format(sport_data.staked) }}€ staked</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color: var(--text-muted); padding: 1rem 0; text-align: center;">No single bets yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Recent Bets -->
+<div class="card-metrika">
+  <div class="card-title-bar">
+    <h3>Recent bets</h3>
+    <a href="{{ url_for('bets_for_bankroll', roll_id=bankroll.id) }}" class="link-green">View all →</a>
+  </div>
+  <div class="recent-bets-list">
+    {% for bet in recent_bets %}
+    <div class="bet-item-card">
+      <div class="bet-item-header">
+        <span class="bet-title">{{ bet.sport or 'Aposta' }}</span>
+        <span class="bet-date">{{ bet.placed_at.strftime('%d/%m/%Y') if bet.placed_at else '' }}</span>
+      </div>
+      <div class="bet-item-details">
+        <span>Odds <strong>{{ bet.total_odds }}</strong></span>
+        <span>Stake <strong>{{ bet.stake }}€</strong></span>
+        <span class="{% if bet.status == 'won' %}text-positive{% elif bet.status == 'lost' %}text-negative{% else %}text-muted{% endif %} font-bold">
+          {% if bet.status == 'won' %}+{{ (bet.potential_return - bet.stake)|round(2) }}€
+          {% elif bet.status == 'lost' %}-{{ bet.stake }}€
+          {% else %}--{% endif %}
+        </span>
+      </div>
+      <div class="bet-item-tags">
+        <span class="tag tag-purple">{{ bet.market_type or 'Single' }}</span>
+        <span class="tag tag-green">{{ bet.sport or 'General' }}</span>
+        {% if bet.is_freebet %}
+        <span class="tag tag-freebet">🎁 Free</span>
+        {% endif %}
+        {% if bet.is_live %}
+        <span class="tag tag-live">⚡ Live</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); padding: 1rem 0;">No bets yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal para Depósito/Levantamento -->
+<div id="fundsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:2rem; max-width:450px; width:90%;">
+    <h3 id="modalTitle" style="margin-bottom:0.5rem;">Add Funds</h3>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.5rem;">Current balance: <strong id="modalBalance">{{ current_balance }}€</strong></p>
+    
+    <form method="post" action="{{ url_for('manage_funds', roll_id=bankroll.id) }}" id="fundsForm">
+      <input type="hidden" name="type" id="txType" value="deposit">
+      
+      <div class="form-group-custom">
+        <label>Type</label>
+        <select name="type_display" id="txTypeDisplay" class="input-metrika" onchange="updateTxType()">
+          <option value="deposit">Deposit</option>
+          <option value="withdrawal">Withdraw</option>
+        </select>
+      </div>
+      
+      <div class="form-group-custom">
+        <label>Amount (€)</label>
+        <input type="number" step="0.01" name="amount" placeholder="0.00" required>
+      </div>
+      
+      <div class="form-group-custom">
+        <label>Bookmaker (optional)</label>
+        <select name="bookmaker_id" class="input-metrika">
+          <option value="">Select Bookmaker</option>
+          {% for book in bookmakers %}
+          <option value="{{ book.id }}">{{ book.name }}</option>
+          {% endfor %}
+        </select>
+        <small style="color: var(--text-muted); font-size: 0.7rem;">Select a bookmaker to track where the funds go</small>
+      </div>
+      
+      <div class="form-group-custom">
+        <label>Note (optional)</label>
+        <input type="text" name="notes" placeholder="e.g. Initial deposit, bonus, etc.">
+      </div>
+      
+      <div style="display:flex; gap:0.75rem; margin-top:1rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para Transferência entre Bankrolls -->
+<div id="transferModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:2rem; max-width:450px; width:90%;">
+    <h3 style="margin-bottom:0.5rem;">Transfer Funds</h3>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.5rem;">Transfer from <strong>{{ bankroll.name }}</strong></p>
+    
+    <form method="post" action="{{ url_for('transfer_funds') }}" id="transferForm">
+      <input type="hidden" name="from_bankroll_id" value="{{ bankroll.id }}">
+      
+      <div class="form-group-custom">
+        <label>To Bankroll</label>
+        <select name="to_bankroll_id" class="input-metrika" required>
+          <option value="">Select Bankroll</option>
+          {% for roll in all_bankrolls %}
+            {% if roll.id != bankroll.id %}
+            <option value="{{ roll.id }}">{{ roll.name }} ({{ roll.currency }})</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="form-group-custom">
+        <label>Amount (€)</label>
+        <input type="number" step="0.01" name="amount" placeholder="0.00" required max="{{ current_balance }}">
+        <small style="color: var(--text-muted); font-size: 0.7rem;">Maximum: {{ current_balance }}€</small>
+      </div>
+      
+      <div class="form-group-custom">
+        <label>Note (optional)</label>
+        <input type="text" name="notes" placeholder="e.g. Transfer to main bankroll">
+      </div>
+      
+      <div style="display:flex; gap:0.75rem; margin-top:1rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeTransferModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Transfer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// Dados do gráfico - usar os mesmos dados que o dashboard
+var chartLabelsData = JSON.parse('{{ chart_labels|tojson|safe }}' || '[]');
+var chartDataData = JSON.parse('{{ chart_data|tojson|safe }}' || '[]');
+
+function openModal(type) {
+  var modal = document.getElementById('fundsModal');
+  var title = document.getElementById('modalTitle');
+  var txType = document.getElementById('txType');
+  var txTypeDisplay = document.getElementById('txTypeDisplay');
+  var saveBtn = document.getElementById('saveBtn');
+  
+  if (type === 'deposit') {
+    title.textContent = 'Add Funds';
+    txType.value = 'deposit';
+    txTypeDisplay.value = 'deposit';
+    saveBtn.textContent = 'Save';
+  } else {
+    title.textContent = 'Withdraw Funds';
+    txType.value = 'withdrawal';
+    txTypeDisplay.value = 'withdrawal';
+    saveBtn.textContent = 'Withdraw';
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('fundsModal').style.display = 'none';
+}
+
+function openTransferModal() {
+  document.getElementById('transferModal').style.display = 'flex';
+}
+
+function closeTransferModal() {
+  document.getElementById('transferModal').style.display = 'none';
+}
+
+function updateTxType() {
+  var display = document.getElementById('txTypeDisplay');
+  var hidden = document.getElementById('txType');
+  var saveBtn = document.getElementById('saveBtn');
+  
+  hidden.value = display.value;
+  if (display.value === 'deposit') {
+    saveBtn.textContent = 'Save';
+    document.getElementById('modalTitle').textContent = 'Add Funds';
+  } else {
+    saveBtn.textContent = 'Withdraw';
+    document.getElementById('modalTitle').textContent = 'Withdraw Funds';
+  }
+}
+
+document.getElementById('fundsModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeModal();
+  }
+});
+
+document.getElementById('transferModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeTransferModal();
+  }
+});
+
+function changeChartView(view, btn) {
+  var buttons = document.querySelectorAll('.btn-toggle');
+  buttons.forEach(function(b) {
+    b.classList.remove('active');
+  });
+  btn.classList.add('active');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Barras de progresso
+  var fills = document.querySelectorAll('.progress-bar-fill');
+  fills.forEach(function(el) {
+    var width = el.getAttribute('data-width');
+    if (width) {
+      el.style.width = width + '%';
+    }
+  });
+
+  // ==================== GRÁFICO DE PROFIT ====================
+  var canvas = document.getElementById('profitChart');
+  if (!canvas) {
+    console.error('Canvas #profitChart nao encontrado');
+    return;
+  }
+
+  var ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('Nao foi possivel obter o contexto do canvas');
+    return;
+  }
+
+  var chartLabels = chartLabelsData || [];
+  var chartData = chartDataData || [];
+
+  // Verificar se há dados válidos
+  var hasValidData = false;
+  if (chartData && chartData.length > 0) {
+    for (var i = 0; i < chartData.length; i++) {
+      if (chartData[i] !== 0 && chartData[i] !== null && chartData[i] !== undefined) {
+        hasValidData = true;
+        break;
+      }
+    }
+  }
+
+  // Se não houver dados válidos, usar fallback
+  if (!hasValidData || chartData.length === 0) {
+    var totalProfit = parseFloat('{{ total_profit }}'.replace(',', '.')) || 0;
+    chartLabels = ['Início', 'Atual'];
+    chartData = [0, totalProfit];
+  }
+
+  // Garantir que os dados são arrays válidos
+  if (!Array.isArray(chartLabels) || chartLabels.length === 0) {
+    chartLabels = ['Sem dados'];
+  }
+  if (!Array.isArray(chartData) || chartData.length === 0) {
+    chartData = [0];
+  }
+
+  console.log('Labels:', chartLabels);
+  console.log('Data:', chartData);
+
+  // Criar o gráfico
+  try {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Profit',
+          data: chartData,
+          borderColor: '#10b981',
+          borderWidth: 3,
+          pointRadius: chartData.length > 1 ? 4 : 0,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#10b981',
+          pointHoverRadius: 7,
+          pointHoverBackgroundColor: '#10b981',
+          pointHoverBorderColor: '#ffffff',
+          tension: 0.3,
+          fill: true,
+          backgroundColor: 'rgba(16, 185, 129, 0.15)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(20, 21, 24, 0.95)',
+            titleColor: '#f1f5f9',
+            bodyColor: '#f1f5f9',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(context) {
+                return 'Profit: ' + context.parsed.y.toFixed(2) + '€';
+              },
+              title: function(context) {
+                return 'Date: ' + context[0].label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(255,255,255,0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              color: '#64748b',
+              font: {
+                size: 10
+              },
+              maxTicksLimit: 10
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(255,255,255,0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              color: '#64748b',
+              font: {
+                size: 10
+              },
+              callback: function(value) {
+                return value.toFixed(0) + '€';
+              }
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        }
+      }
+    });
+    
+    console.log('Grafico criado com sucesso!');
+  } catch (e) {
+    console.error('Erro ao criar grafico:', e);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '16px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Erro ao carregar grafico', canvas.width / 2, canvas.height / 2);
+  }
+});
+</script>
+{% endblock %}
