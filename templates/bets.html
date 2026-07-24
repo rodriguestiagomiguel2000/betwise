@@ -38,7 +38,8 @@
     </div>
   </div>
 
-  <div class="table-responsive">
+  <!-- ===== TABELA (Desktop) ===== -->
+  <div class="table-responsive desktop-table">
     <table>
       <thead>
         <tr>
@@ -174,6 +175,121 @@
       </tbody>
     </table>
   </div>
+
+  <!-- ===== CARDS MOBILE (estilo metrika) ===== -->
+  <div class="mobile-bets-cards">
+    {% for bet in bets %}
+    <div class="bet-card-mobile" id="bet-card-{{ bet.id }}">
+      <div class="bet-card-header">
+        <div class="bet-card-title">
+          {% if bet.legs|length > 1 %}
+            <span class="bet-legs-count">{{ bet.legs|length }} seleções</span>
+          {% else %}
+            <span class="bet-event">{{ bet.legs[0].event if bet.legs and bet.legs[0].event else bet.sport or 'Aposta' }}</span>
+          {% endif %}
+          <span class="bet-card-date">{{ bet.placed_at.strftime('%d/%m/%y · %H:%M') if bet.placed_at else '' }}</span>
+        </div>
+        <div class="bet-card-checkbox">
+          <input type="checkbox" class="bet-checkbox-mobile" data-bet-id="{{ bet.id }}" onchange="updateSelectedCountMobile()">
+        </div>
+      </div>
+
+      <div class="bet-card-legs">
+        {% if bet.legs %}
+          {% for leg in bet.legs[:3] %}
+          <div class="bet-leg-item">{{ leg.event or leg.team or '-' }}</div>
+          {% endfor %}
+          {% if bet.legs|length > 3 %}
+          <div class="bet-leg-more">+{{ bet.legs|length - 3 }} mais</div>
+          {% endif %}
+        {% else %}
+          <div class="bet-leg-item">{{ bet.sport or 'Aposta' }}</div>
+        {% endif %}
+      </div>
+
+      <div class="bet-card-stats">
+        <div class="bet-card-odds">
+          <span class="stat-label">Odds</span>
+          <span class="stat-value">{{ bet.total_odds or '-' }}</span>
+        </div>
+        <div class="bet-card-stake">
+          <span class="stat-label">Stake</span>
+          <span class="stat-value">{{ bet.stake ~ '€' if bet.stake else '-' }}</span>
+        </div>
+        <div class="bet-card-profit">
+          <span class="stat-label">Profit</span>
+          <span class="stat-value {% if bet.status == 'won' %}text-positive{% elif bet.status == 'lost' %}text-negative{% else %}text-muted{% endif %}">
+            {% if bet.status == 'won' and bet.potential_return and bet.stake %}
+              +{{ (bet.potential_return - bet.stake)|round(2) }}€
+            {% elif bet.status == 'lost' and bet.stake %}
+              -{{ bet.stake }}€
+            {% elif bet.status == 'cashed_out' and bet.cashed_out_amount and bet.stake %}
+              {{ (bet.cashed_out_amount - bet.stake)|round(2) }}€
+            {% else %}
+              --
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="bet-card-tags">
+        <span class="tag tag-type">{{ bet.market_type or 'Single' }}</span>
+        <span class="tag tag-sport">{{ bet.sport or 'General' }}</span>
+        {% if bet.bookmaker_obj %}
+        <span class="tag tag-bookmaker">{{ bet.bookmaker_obj.name }}</span>
+        {% endif %}
+        {% if bet.is_freebet %}
+        <span class="tag tag-freebet">🎁 Free</span>
+        {% endif %}
+        {% if bet.is_live %}
+        <span class="tag tag-live">⚡ Live</span>
+        {% endif %}
+        <span class="tag tag-status status-{{ bet.status }}">{{ bet.status }}</span>
+      </div>
+
+      <div class="bet-card-actions">
+        <form method="post" action="{{ url_for('quick_update_bet', bet_id=bet.id) }}" class="status-form-mobile">
+          <select name="bet_status" onchange="this.form.submit()" class="badge badge-{{ bet.status }}">
+            <option value="open" {% if bet.status == 'open' %}selected{% endif %}>Aberta</option>
+            <option value="won" {% if bet.status == 'won' %}selected{% endif %}>Ganha</option>
+            <option value="lost" {% if bet.status == 'lost' %}selected{% endif %}>Perdida</option>
+            <option value="void" {% if bet.status == 'void' %}selected{% endif %}>Anulada</option>
+            <option value="cashed_out" {% if bet.status == 'cashed_out' %}selected{% endif %}>Cashout</option>
+          </select>
+        </form>
+        <div class="bet-card-buttons">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDetailsMobile('{{ bet.id }}')">📋</button>
+          <a href="{{ url_for('edit_bet', bet_id=bet.id) }}" class="btn btn-secondary btn-sm">✏️</a>
+          {% if bet.status == 'won' or bet.status == 'lost' %}
+            <a href="{{ url_for('create_tip', bet_id=bet.id) }}" class="btn btn-secondary btn-sm">💡</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('delete_bet', bet_id=bet.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Eliminar #{{ bet.id }}?')">✖</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="bet-details-mobile-{{ bet.id }}" style="display:none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+        {% if bet.legs %}
+        <div style="font-size: 0.7rem; color: var(--text-muted);">
+          {% for leg in bet.legs %}
+          <div style="padding: 0.15rem 0; display: flex; justify-content: space-between;">
+            <span>{{ leg.event or leg.team or '-' }}</span>
+            <span>{{ leg.odds_decimal if leg.odds_decimal is not none else '-' }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.7rem;">Sem seleções.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="card-metrika">
+      <p style="text-align:center; color: var(--text-muted); padding: 2rem;">Nenhuma aposta encontrada.</p>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 
 <!-- Modal de Confirmação para Apagar em Massa -->
@@ -195,13 +311,15 @@
 <script>
 // Variável para armazenar os IDs selecionados
 var selectedBetIds = [];
+var selectedBetIdsMobile = [];
 
 function toggleAllCheckboxes(masterCheckbox) {
-    var checkboxes = document.querySelectorAll('.bet-checkbox');
+    var checkboxes = document.querySelectorAll('.bet-checkbox, .bet-checkbox-mobile');
     checkboxes.forEach(function(cb) {
         cb.checked = masterCheckbox.checked;
     });
     updateSelectedCount();
+    updateSelectedCountMobile();
 }
 
 function toggleSelectAll() {
@@ -238,12 +356,37 @@ function updateSelectedCount() {
     });
 }
 
+function updateSelectedCountMobile() {
+    var checkboxes = document.querySelectorAll('.bet-checkbox-mobile:checked');
+    var count = checkboxes.length;
+    var total = document.querySelectorAll('.bet-checkbox-mobile').length;
+    
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('deleteSelectedBtn').style.display = count > 0 ? 'inline-flex' : 'none';
+    
+    if (count === total && total > 0) {
+        document.getElementById('selectAllCheckbox').checked = true;
+    } else {
+        document.getElementById('selectAllCheckbox').checked = false;
+    }
+    
+    selectedBetIdsMobile = [];
+    checkboxes.forEach(function(cb) {
+        selectedBetIdsMobile.push(parseInt(cb.getAttribute('data-bet-id')));
+    });
+    
+    if (count > 0) {
+        selectedBetIds = selectedBetIdsMobile;
+    }
+}
+
 function deleteSelected() {
-    if (selectedBetIds.length === 0) {
+    var allChecked = document.querySelectorAll('.bet-checkbox:checked, .bet-checkbox-mobile:checked');
+    if (allChecked.length === 0) {
         alert('Por favor, selecione pelo menos uma aposta.');
         return;
     }
-    document.getElementById('deleteCount').textContent = selectedBetIds.length;
+    document.getElementById('deleteCount').textContent = allChecked.length;
     document.getElementById('deleteModal').style.display = 'flex';
 }
 
@@ -262,21 +405,27 @@ function updateTotalBetsCount() {
 }
 
 function confirmDeleteSelected() {
-    if (selectedBetIds.length === 0) return;
+    var allChecked = document.querySelectorAll('.bet-checkbox:checked, .bet-checkbox-mobile:checked');
+    var ids = [];
+    allChecked.forEach(function(cb) {
+        ids.push(parseInt(cb.getAttribute('data-bet-id')));
+    });
+    
+    if (ids.length === 0) return;
     
     fetch('/bets/delete_bulk', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bet_ids: selectedBetIds })
+        body: JSON.stringify({ bet_ids: ids })
     })
     .then(function(response) {
         return response.json();
     })
     .then(function(data) {
         if (data.success) {
-            selectedBetIds.forEach(function(id) {
+            ids.forEach(function(id) {
                 var row = document.getElementById('bet-row-' + id);
                 if (row) {
                     row.remove();
@@ -285,19 +434,24 @@ function confirmDeleteSelected() {
                 if (details) {
                     details.remove();
                 }
+                var card = document.getElementById('bet-card-' + id);
+                if (card) {
+                    card.remove();
+                }
             });
             
             closeDeleteModal();
-            alert(data.message || selectedBetIds.length + ' apostas eliminadas com sucesso!');
+            alert(data.message || ids.length + ' apostas eliminadas com sucesso!');
             
             selectedBetIds = [];
+            selectedBetIdsMobile = [];
             document.getElementById('selectedCount').textContent = '0';
             document.getElementById('deleteSelectedBtn').style.display = 'none';
             document.getElementById('selectAllBtn').textContent = '☐ Selecionar Todos';
             document.getElementById('selectAllCheckbox').checked = false;
             
             var totalRows = updateTotalBetsCount();
-            if (totalRows === 0) {
+            if (totalRows === 0 && document.querySelectorAll('.bet-card-mobile').length === 0) {
                 location.reload();
             }
         } else {
@@ -315,6 +469,12 @@ function toggleDetails(betId) {
   row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
 }
 
+function toggleDetailsMobile(betId) {
+  var row = document.getElementById('bet-details-mobile-' + betId);
+  if (!row) return;
+  row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'block' : 'none';
+}
+
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeDeleteModal();
@@ -323,6 +483,294 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
 
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedCount();
+    updateSelectedCountMobile();
 });
 </script>
+
+<style>
+/* ============================================================
+   MOBILE - CARDS (apenas em telemóvel)
+   ============================================================ */
+.mobile-bets-cards {
+    display: none;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.bet-card-mobile {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    transition: border-color 0.2s;
+}
+
+.bet-card-mobile:hover {
+    border-color: var(--accent-green);
+}
+
+.bet-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4rem;
+}
+
+.bet-card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.bet-legs-count {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.bet-event {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-main);
+}
+
+.bet-card-date {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.bet-card-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-green);
+    cursor: pointer;
+}
+
+.bet-card-legs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+}
+
+.bet-leg-item {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bet-leg-more {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.bet-card-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bet-card-stats .stat-label {
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+}
+
+.bet-card-stats .stat-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.bet-card-stats > div {
+    flex: 1;
+    text-align: center;
+}
+
+.bet-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.bet-card-tags .tag {
+    font-size: 0.55rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+}
+
+.tag-type {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--accent-purple);
+}
+
+.tag-sport {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--accent-green);
+}
+
+.tag-bookmaker {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.tag-freebet {
+    background: rgba(234, 179, 8, 0.15);
+    color: var(--accent-yellow);
+}
+
+.tag-live {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.tag-status {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+}
+
+.tag-status.status-won {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--accent-green);
+}
+
+.tag-status.status-lost {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-red);
+}
+
+.tag-status.status-open {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.tag-status.status-cashed_out {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--accent-orange);
+}
+
+.bet-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.bet-card-actions .badge {
+    font-size: 0.55rem;
+    padding: 0.1rem 0.4rem;
+}
+
+.bet-card-buttons {
+    display: flex;
+    gap: 0.2rem;
+    margin-left: auto;
+}
+
+.bet-card-buttons .btn {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.3rem;
+}
+
+/* ============================================================
+   MOBILE - @media
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Esconder tabela em mobile */
+    .desktop-table {
+        display: none !important;
+    }
+    
+    /* Mostrar cards em mobile */
+    .mobile-bets-cards {
+        display: flex !important;
+    }
+    
+    /* Ajustes nos botões do header para mobile */
+    .card-header > div {
+        gap: 0.3rem !important;
+    }
+    
+    .card-header .btn {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    .card-header .btn-sm {
+        font-size: 0.5rem !important;
+        padding: 0.15rem 0.3rem !important;
+    }
+    
+    .card-header select {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+        max-width: 80px !important;
+    }
+    
+    .card-header span {
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .bet-card-stats {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    
+    .bet-card-stats > div {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.1rem 0;
+    }
+    
+    .bet-card-stats .stat-label {
+        display: inline;
+        font-size: 0.5rem;
+    }
+    
+    .bet-card-stats .stat-value {
+        font-size: 0.7rem;
+    }
+    
+    .bet-card-tags .tag {
+        font-size: 0.45rem;
+    }
+    
+    .bet-card-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .bet-card-buttons {
+        margin-left: 0;
+        justify-content: center;
+    }
+    
+    .card-header .btn {
+        font-size: 0.5rem !important;
+        padding: 0.15rem 0.25rem !important;
+    }
+    
+    .card-header select {
+        font-size: 0.5rem !important;
+        max-width: 60px !important;
+    }
+}
+</style>
 {% endblock %}
