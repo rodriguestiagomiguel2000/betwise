@@ -2,7 +2,7 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>{{ APP_NAME }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +13,8 @@
   <meta name="theme-color" content="{{ APP_COLOR }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon">
   
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
 </head>
@@ -24,35 +26,57 @@
       <span>{{ APP_NAME }}</span>
     </div>
 
-    <a href="{{ url_for('upload') }}" class="btn-new-bet">+ New bet</a>
+    <a href="{{ url_for('upload') }}" class="btn-new-bet" title="New bet">+ New bet</a>
 
     <div class="sidebar-menu">
       <div class="menu-group">
         <span class="menu-label">BET MANAGEMENT</span>
-        <a href="{{ url_for('stats') }}" class="menu-item {% if request.endpoint == 'stats' %}active{% endif %}">📊 Dashboard</a>
-        <a href="{{ url_for('upload') }}" class="menu-item {% if request.endpoint == 'upload' %}active{% endif %}">➕ New bet</a>
-        <a href="{{ url_for('bets_list') }}" class="menu-item {% if request.endpoint == 'bets_list' %}active{% endif %}">📜 History</a>
-        <a href="{{ url_for('bankrolls_list') }}" class="menu-item {% if request.endpoint == 'bankrolls_list' %}active{% endif %}">🏦 My Bankrolls</a>
+        <a href="{{ url_for('stats') }}" class="menu-item {% if request.endpoint == 'stats' %}active{% endif %}" title="Dashboard">
+          <span>📊 Dashboard</span>
+        </a>
+        <a href="{{ url_for('upload') }}" class="menu-item {% if request.endpoint == 'upload' %}active{% endif %}" title="New bet">
+          <span>➕ New bet</span>
+        </a>
+        <a href="{{ url_for('bets_list') }}" class="menu-item {% if request.endpoint == 'bets_list' %}active{% endif %}" title="History">
+          <span>📜 History</span>
+        </a>
+        <a href="{{ url_for('bankrolls_list') }}" class="menu-item {% if request.endpoint == 'bankrolls_list' %}active{% endif %}" title="My Bankrolls">
+          <span>🏦 My Bankrolls</span>
+        </a>
       </div>
 
       <div class="menu-group">
         <span class="menu-label">COMMUNITY</span>
-        <a href="{{ url_for('tips_feed') }}" class="menu-item {% if request.endpoint == 'tips_feed' %}active{% endif %}">📊 Tips Feed</a>
-        <a href="{{ url_for('my_tips') }}" class="menu-item {% if request.endpoint == 'my_tips' %}active{% endif %}">📝 My Tips</a>
+        <a href="{{ url_for('tips_feed') }}" class="menu-item {% if request.endpoint == 'tips_feed' %}active{% endif %}" title="Tips Feed">
+          <span>📊 Tips Feed</span>
+        </a>
+        <a href="{{ url_for('my_tips') }}" class="menu-item {% if request.endpoint == 'my_tips' %}active{% endif %}" title="My Tips">
+          <span>📝 My Tips</span>
+        </a>
       </div>
 
       <div class="menu-group">
         <span class="menu-label">TOOLS</span>
-        <a href="{{ url_for('bookmakers_list') }}" class="menu-item {% if request.endpoint == 'bookmakers_list' %}active{% endif %}">🏠 Bookmakers</a>
-        <a href="{{ url_for('value_bets') }}" class="menu-item {% if request.endpoint == 'value_bets' %}active{% endif %}">🎯 Value Bets</a>
-        <a href="{{ url_for('export_all') }}" class="menu-item {% if request.endpoint == 'export_all' %}active{% endif %}">📤 Export Data</a>
-        <a href="{{ url_for('import_data') }}" class="menu-item {% if request.endpoint == 'import_data' %}active{% endif %}">📥 Import Data</a>
+        <a href="{{ url_for('bookmakers_list') }}" class="menu-item {% if request.endpoint == 'bookmakers_list' %}active{% endif %}" title="Bookmakers">
+          <span>🏠 Bookmakers</span>
+        </a>
+        <a href="{{ url_for('value_bets') }}" class="menu-item {% if request.endpoint == 'value_bets' %}active{% endif %}" title="Value Bets">
+          <span>🎯 Value Bets</span>
+        </a>
+        <a href="{{ url_for('export_all') }}" class="menu-item {% if request.endpoint == 'export_all' %}active{% endif %}" title="Export Data">
+          <span>📤 Export Data</span>
+        </a>
+        <a href="{{ url_for('import_data') }}" class="menu-item {% if request.endpoint == 'import_data' %}active{% endif %}" title="Import Data">
+          <span>📥 Import Data</span>
+        </a>
       </div>
 
       {% if current_user.is_authenticated and current_user.is_admin %}
       <div class="menu-group">
         <span class="menu-label">ADMIN</span>
-        <a href="{{ url_for('admin_dashboard') }}" class="menu-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">👑 Admin</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="menu-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" title="Admin">
+          <span>👑 Admin</span>
+        </a>
       </div>
       {% endif %}
     </div>
