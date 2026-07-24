@@ -623,51 +623,18 @@ Rules:
 def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: float = 2.0) -> Dict[str, Any]:
     """Chama a API Gemini para extrair dados de um talão de apostas."""
     
-    # ===== DEBUG =====
-    print("=" * 50)
-    print("🔍 DEBUG - call_gemini_on_betslip")
-    print(f"   - image_path: {image_path}")
-    print(f"   - GEMINI_API_KEY: {'✅' if GEMINI_API_KEY else '❌'}")
-    
-    # Verificar se o ficheiro existe
-    if os.path.exists(image_path):
-        file_size = os.path.getsize(image_path)
-        print(f"   - Ficheiro existe: ✅ ({file_size} bytes)")
-    else:
-        print(f"   - Ficheiro existe: ❌")
-        raise RuntimeError(f"Ficheiro não encontrado: {image_path}")
-    
     if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY not configured. Please set it in .env file.")
+        raise RuntimeError("GEMINI_API_KEY not configured.")
     
     prompt = build_gemini_prompt()
-    print("=" * 50)
 
-    # ===== LER IMAGEM COM VERIFICAÇÃO =====
-    try:
-        with open(image_path, "rb") as f:
-            image_bytes = f.read()
-        
-        if not image_bytes:
-            raise RuntimeError(f"Imagem vazia ou não lida: {image_path}")
-        
-        print(f"📸 Imagem lida: {len(image_bytes)} bytes")
-        
-    except FileNotFoundError:
-        raise RuntimeError(f"Ficheiro de imagem não encontrado: {image_path}")
-    except Exception as e:
-        raise RuntimeError(f"Erro ao ler imagem: {e}")
-    
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
-    
-    if not image_b64:
-        raise RuntimeError("Falha ao codificar imagem para base64")
 
-    # ===== MODELOS POR ORDEM DE PREFERÊNCIA =====
     models_to_try = [
         "gemini-3.1-flash-lite",
         "gemini-2.0-flash",
-        "gemini-2.5-flash",
         "gemini-flash-latest",
     ]
     
@@ -676,12 +643,7 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
             {
                 "parts": [
                     {"text": prompt},
-                    {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": image_b64
-                        }
-                    }
+                    {"inline_data": {"mime_type": "image/jpeg", "data": image_b64}}
                 ]
             }
         ],
@@ -691,36 +653,27 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
         }
     }
 
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY,
-    }
-
     last_error = None
 
     for model in models_to_try:
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        # ===== USAR API KEY COMO PARÂMETRO URL =====
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         print(f"🔍 Tentando modelo: {model}")
         
         for attempt in range(max_retries):
             try:
-                import json
-                payload_size = len(json.dumps(payload))
-                print(f"   Tamanho do payload: {payload_size} bytes")
+                # NÃO usar o header x-goog-api-key
+                headers = {
+                    "Content-Type": "application/json",
+                }
                 
                 resp = requests.post(endpoint, headers=headers, json=payload, timeout=120)
-                
                 print(f"   Status code: {resp.status_code}")
                 
                 if resp.status_code == 200:
                     print(f"✅ Modelo {model} funcionou!")
                     data = resp.json()
-                    
-                    try:
-                        text = data["candidates"][0]["content"]["parts"][0]["text"]
-                    except (KeyError, IndexError) as e:
-                        print(f"❌ Estrutura de resposta inesperada: {data}")
-                        raise RuntimeError(f"Resposta inesperada da API: {data}")
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
                     
                     cleaned = text.strip()
                     if cleaned.startswith("```"):
@@ -729,70 +682,41 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
                             cleaned = cleaned[4:]
                         cleaned = cleaned.strip()
                     
-                    try:
-                        result = json.loads(cleaned)
-                        return result
-                    except json.JSONDecodeError as e:
-                        print(f"❌ Erro ao fazer parse do JSON: {e}")
-                        print(f"   Texto recebido: {cleaned[:200]}")
-                        raise RuntimeError(f"Resposta não é JSON válido: {cleaned[:200]}")
+                    return json.loads(cleaned)
                     
                 elif resp.status_code == 400:
-                    error_detail = resp.text[:500] if resp.text else "Sem detalhes"
-                    print(f"❌ Erro 400 - Requisição inválida: {error_detail}")
-                    last_error = resp
+                    error_detail = resp.text[:300] if resp.text else "Sem detalhes"
+                    print(f"❌ Erro 400: {error_detail}")
                     
-                    if "image" in error_detail.lower() or "format" in error_detail.lower():
-                        print("   ⚠️ Problema com a imagem, tentando próximo modelo...")
+                    # Se for erro de localização, tentar próximo modelo
+                    if "location" in error_detail.lower() or "not supported" in error_detail.lower():
+                        print("   ⚠️ Erro de localização - a API pode não estar disponível nesta região")
+                        last_error = resp
                         break
                     
                     time.sleep(base_delay * (attempt + 1))
                     continue
                     
+                elif resp.status_code == 429:
+                    print(f"⚠️ Limite excedido (429)")
+                    time.sleep(base_delay * (attempt + 1) * 2)
+                    continue
+                    
                 elif resp.status_code == 404:
-                    print(f"⚠️ Modelo {model} não encontrado (404)")
+                    print(f"⚠️ Modelo {model} não encontrado")
                     break
                     
-                elif resp.status_code == 429:
-                    print(f"⚠️ Limite de requests excedido (429)")
-                    delay = base_delay * (attempt + 1)
-                    print(f"   Aguardando {delay} segundos...")
-                    time.sleep(delay)
-                    continue
-                    
-                elif resp.status_code == 503:
-                    print(f"⚠️ Serviço indisponível (503)")
-                    time.sleep(base_delay * (attempt + 1))
-                    continue
-                    
                 else:
-                    print(f"⚠️ Modelo {model} falhou: {resp.status_code}")
-                    print(f"   Resposta: {resp.text[:200]}")
+                    print(f"⚠️ Erro: {resp.status_code}")
                     last_error = resp
                     break
                     
-            except requests.Timeout:
-                print(f"⚠️ Timeout com modelo {model}")
-                last_error = "Timeout"
-                continue
-                
-            except requests.RequestException as e:
-                print(f"⚠️ Erro com modelo {model}: {e}")
+            except Exception as e:
+                print(f"⚠️ Erro: {e}")
                 last_error = e
                 break
     
-    error_msg = "Todos os modelos Gemini falharam"
-    if last_error:
-        if hasattr(last_error, 'status_code'):
-            error_msg += f" - Último erro: {last_error.status_code}"
-            if hasattr(last_error, 'text'):
-                error_msg += f" - {last_error.text[:200]}"
-        elif isinstance(last_error, str):
-            error_msg += f" - {last_error}"
-        else:
-            error_msg += f" - {str(last_error)}"
-    
-    raise RuntimeError(error_msg)
+    raise RuntimeError(f"Todos os modelos falharam. Último erro: {last_error}")
 
 def parse_bet_in_background(bet_id: int, image_path: str):
     from app import app, db, Bet, BetLeg
