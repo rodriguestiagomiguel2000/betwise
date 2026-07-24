@@ -1192,10 +1192,10 @@ input[type="checkbox"]:checked {
 }
 
 /* ============================================================
-   MOBILE - VERSÃO MELHORADA
+   MOBILE - VERSÃO INSPIRADA NO METRIKA (mantendo estilo BETWISE)
    ============================================================ */
 
-/* Mobile Header - aparece apenas em mobile */
+/* Mobile Header - estilo metrika mas com cores BETWISE */
 .mobile-header {
   display: none;
   position: fixed;
@@ -1203,85 +1203,129 @@ input[type="checkbox"]:checked {
   left: 0;
   right: 0;
   z-index: 200;
-  height: 48px;
+  height: 56px;
   background: var(--bg-dark);
   border-bottom: 1px solid var(--border-color);
-  padding: 0 12px;
+  padding: 0 16px;
   align-items: center;
   justify-content: space-between;
 }
 
-.mobile-brand {
+.mobile-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.mobile-header .brand .accent {
+  color: var(--accent-green);
 }
 
 .menu-toggle {
   background: none;
   border: none;
   color: var(--text-main);
-  padding: 8px;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-.mobile-actions {
-  background: var(--accent-green);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  color: #000;
-  font-size: 1.2rem;
-  font-weight: 700;
+  padding: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Sidebar - escondida em mobile por padrão */
+.menu-toggle svg {
+  stroke: var(--text-main);
+}
+
+.mobile-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mobile-actions .btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-actions .btn-icon:hover {
+  border-color: var(--accent-green);
+  color: var(--text-main);
+}
+
+.mobile-actions .btn-primary-mobile {
+  background: var(--accent-green);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.mobile-actions .btn-primary-mobile:hover {
+  background: var(--accent-green-hover);
+}
+
+/* Overlay para fechar menu */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 150;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
 @media (max-width: 768px) {
+  /* Mostrar mobile header */
   .mobile-header {
     display: flex !important;
   }
 
   body.metrika-body {
-    padding-top: 48px;
+    padding-top: 56px;
   }
 
+  /* Sidebar - estilo metrika (desliza por cima) */
   .sidebar {
     position: fixed;
-    top: 48px;
-    left: -280px;
-    width: 280px !important;
-    height: calc(100vh - 48px);
-    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 150;
+    top: 56px;
+    left: -300px;
+    width: 280px;
+    height: calc(100vh - 56px);
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
     padding: 1rem 0.75rem !important;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 160;
     overflow-y: auto;
-    box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
   }
 
   .sidebar.open {
     left: 0;
-  }
-
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 48px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 140;
-  }
-
-  .sidebar-overlay.active {
-    display: block;
   }
 
   /* Mostrar textos na sidebar mobile */
@@ -1296,6 +1340,7 @@ input[type="checkbox"]:checked {
     padding: 0 0.5rem 0.75rem !important;
     font-size: 0.9rem !important;
     border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.75rem;
   }
 
   .sidebar .menu-item {
@@ -1307,8 +1352,8 @@ input[type="checkbox"]:checked {
 
   .sidebar .btn-new-bet {
     font-size: 0.75rem !important;
-    padding: 0.4rem !important;
-    margin: 0.5rem 0 1rem !important;
+    padding: 0.5rem !important;
+    margin: 0 0 1rem 0 !important;
   }
 
   /* Main content - sem margem da sidebar */
@@ -1316,55 +1361,64 @@ input[type="checkbox"]:checked {
     margin-left: 0 !important;
   }
 
+  /* Topbar desktop escondida */
   .topbar {
     display: none !important;
   }
 
   .content-area {
-    padding: 0.5rem !important;
+    padding: 0.75rem !important;
   }
 
-  /* Tabela responsiva com scroll horizontal */
-  .table-responsive {
-    margin: 0 -0.5rem !important;
-    padding: 0 0.5rem !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
+  /* ===== PÁGINAS E CARDS ===== */
+  .page-title {
+    font-size: 1.1rem !important;
   }
 
-  .table-responsive table {
-    font-size: 0.6rem !important;
-    min-width: 600px;
+  .page-subtitle {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
-  .table-responsive th,
-  .table-responsive td {
-    padding: 0.3rem 0.4rem !important;
-    white-space: nowrap;
+  .card-metrika {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: var(--radius-sm) !important;
   }
 
-  /* KPIs - 2 colunas mas maiores */
+  .card-title-sub {
+    font-size: 0.85rem !important;
+  }
+
+  /* ===== KPI GRID - 2 colunas compactas (estilo metrika) ===== */
   .kpi-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.4rem !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
   .kpi-card {
-    padding: 0.6rem !important;
+    padding: 0.6rem 0.5rem !important;
+    text-align: center;
   }
 
   .kpi-value {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
   }
 
   .kpi-label {
-    font-size: 0.5rem !important;
+    font-size: 0.55rem !important;
   }
 
-  /* Insights - 2 colunas */
+  .kpi-icon {
+    font-size: 0.9rem !important;
+  }
+
+  /* ===== INSIGHTS - 2 colunas ===== */
   .insights-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.4rem !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
   .insight-card {
@@ -1383,42 +1437,141 @@ input[type="checkbox"]:checked {
     font-size: 1rem !important;
   }
 
-  /* Dashboard row - empilhar */
+  /* ===== DASHBOARD ROW - empilhar ===== */
   .dashboard-row-2 {
     grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
   }
 
-  /* Performance card */
+  /* ===== PERFORMANCE CARD (estilo metrika) ===== */
   .performance-body {
-    flex-direction: column !important;
-    gap: 0.5rem !important;
-    text-align: center;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+    justify-content: center !important;
   }
 
   .donut-placeholder {
-    width: 70px !important;
-    height: 70px !important;
+    width: 72px !important;
+    height: 72px !important;
     border-width: 6px !important;
   }
 
+  .donut-val {
+    font-size: 0.7rem !important;
+  }
+
   .perf-stats {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.2rem 0.5rem !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 0.15rem 0.5rem !important;
+    flex: 1;
   }
 
   .perf-stats > div {
     font-size: 0.6rem !important;
+    justify-content: center !important;
   }
 
   .perf-stats strong {
     font-size: 0.75rem !important;
+    min-width: 20px;
   }
 
-  /* Bankrolls */
+  /* ===== STREAKS (estilo metrika) ===== */
+  .streaks-modern {
+    justify-content: space-around !important;
+  }
+
+  .streak-value {
+    font-size: 1.2rem !important;
+  }
+
+  .streak-label {
+    font-size: 0.5rem !important;
+  }
+
+  /* ===== TABELAS - scroll horizontal ===== */
+  .table-responsive {
+    margin: 0 -0.5rem !important;
+    padding: 0 0.5rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    font-size: 0.6rem !important;
+    min-width: 500px !important;
+  }
+
+  .table-responsive th,
+  .table-responsive td {
+    padding: 0.3rem 0.4rem !important;
+    white-space: nowrap;
+  }
+
+  .table-responsive .badge {
+    font-size: 0.5rem !important;
+    padding: 0.1rem 0.4rem !important;
+  }
+
+  /* ===== FILTROS (estilo metrika - compactos) ===== */
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .header-actions {
+    width: 100% !important;
+  }
+
+  .filter-form {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+  }
+
+  .filter-form select {
+    flex: 1 !important;
+    min-width: 80px !important;
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.6rem !important;
+  }
+
+  /* ===== BANKROLLS ===== */
   .bankroll-stats-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.3rem !important;
+    gap: 0.4rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .bankroll-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .bankroll-header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .bankroll-cards {
+    grid-template-columns: 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .bankroll-card {
+    padding: 0.5rem !important;
+  }
+
+  .bankroll-name {
+    font-size: 0.7rem !important;
+  }
+
+  .bankroll-card-stats .stat-number {
+    font-size: 0.7rem !important;
   }
 
   .stat-card {
@@ -1433,123 +1586,162 @@ input[type="checkbox"]:checked {
     font-size: 0.5rem !important;
   }
 
-  .bankroll-cards {
-    grid-template-columns: 1fr !important;
-    gap: 0.3rem !important;
-  }
-
-  .bankroll-card {
-    padding: 0.5rem !important;
-  }
-
-  .bankroll-name {
-    font-size: 0.7rem !important;
-  }
-
-  /* Botões */
-  .btn {
-    font-size: 0.6rem !important;
-    padding: 0.3rem 0.5rem !important;
-  }
-
-  .btn-sm {
-    font-size: 0.5rem !important;
-    padding: 0.15rem 0.3rem !important;
-  }
-
-  /* Filtros - empilhar */
-  .dashboard-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-
-  .header-actions {
-    width: 100% !important;
-  }
-
-  .filter-form {
-    flex-direction: column !important;
-    width: 100% !important;
-    gap: 0.3rem !important;
-  }
-
-  .filter-form select {
-    width: 100% !important;
-    padding: 0.4rem !important;
-    font-size: 0.65rem !important;
-  }
-
-  /* Card header - flex wrap */
-  .card-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 0.5rem !important;
-  }
-
-  .card-header > div {
-    width: 100% !important;
-    flex-wrap: wrap !important;
-  }
-
-  /* New bet page */
-  .new-bet-layout {
-    grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
-  }
-
-  .form-grid-2 {
-    grid-template-columns: 1fr !important;
-    gap: 0.3rem !important;
-  }
-
-  .form-actions-bottom {
-    flex-direction: column !important;
-    gap: 0.3rem !important;
-  }
-
-  .form-actions-bottom .btn {
-    width: 100% !important;
-    justify-content: center !important;
-  }
-
-  /* Upload - Vision card */
-  .card-vision {
+  .month-group {
     padding: 0.75rem !important;
   }
 
-  /* Bookmakers table */
+  .month-title {
+    font-size: 0.8rem !important;
+  }
+
+  .month-profit {
+    font-size: 0.8rem !important;
+  }
+
+  /* ===== BOOKMAKERS ===== */
+  .bankroll-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
   .bookmakers-table td,
   .bookmakers-table th {
     font-size: 0.6rem !important;
     padding: 0.3rem 0.4rem !important;
   }
 
-  /* Bankroll header */
-  .bankroll-header {
+  /* ===== BETS (history) ===== */
+  .card-header {
     flex-direction: column !important;
     align-items: stretch !important;
+    gap: 0.5rem !important;
   }
 
-  /* Manage funds */
+  .card-header > div {
+    flex-wrap: wrap !important;
+  }
+
+  .card-header .btn {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  /* ===== NEW BET (upload) ===== */
+  .new-bet-layout {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .new-bet-title-container .plus-icon-circle {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1rem !important;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .form-group-custom input,
+  .form-group-custom select {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .form-actions-bottom {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  .form-actions-bottom .btn {
+    flex: 1 !important;
+    min-width: 80px !important;
+    justify-content: center !important;
+    padding: 0.4rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .bet-type-toggle .btn-type {
+    font-size: 0.7rem !important;
+    padding: 0.3rem !important;
+  }
+
+  .toggle-card {
+    padding: 0.4rem 0 !important;
+  }
+
+  .toggle-info strong {
+    font-size: 0.75rem !important;
+  }
+
+  .switch {
+    width: 34px !important;
+    height: 20px !important;
+  }
+
+  .switch .slider::before {
+    height: 14px !important;
+    width: 14px !important;
+  }
+
+  .switch input:checked + .slider::before {
+    transform: translateX(14px) !important;
+  }
+
+  .status-pill {
+    font-size: 0.6rem !important;
+    padding: 0.2rem 0.5rem !important;
+  }
+
+  /* ===== MANAGE FUNDS ===== */
   .quick-stats-grid {
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.2rem !important;
+    gap: 0.3rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
   .quick-stat {
-    padding: 0.3rem !important;
+    padding: 0.4rem !important;
   }
 
   .quick-stat-value {
     font-size: 0.7rem !important;
   }
 
+  .quick-stat-label {
+    font-size: 0.45rem !important;
+  }
+
+  .balance-card {
+    padding: 1rem !important;
+  }
+
+  .balance-value {
+    font-size: 1.6rem !important;
+  }
+
   .balance-actions {
     flex-wrap: wrap !important;
     justify-content: center !important;
+    gap: 0.3rem !important;
   }
 
-  /* Performance stats */
+  .balance-actions .btn {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  .bet-types-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .bet-type-profit {
+    font-size: 0.9rem !important;
+  }
+
+  /* ===== PERFORMANCE STATS (manage funds) ===== */
   .performance-stats {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -1559,22 +1751,22 @@ input[type="checkbox"]:checked {
   .perf-big-number {
     border-right: none !important;
     padding-right: 0 !important;
+    text-align: center !important;
+  }
+
+  .perf-number {
+    font-size: 1.3rem !important;
   }
 
   .perf-grid {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  .streaks-grid {
     grid-template-columns: 1fr 1fr 1fr !important;
   }
 
-  /* Bet types */
-  .bet-types-grid {
-    grid-template-columns: 1fr !important;
+  .perf-value {
+    font-size: 0.7rem !important;
   }
 
-  /* Profile */
+  /* ===== PROFILE ===== */
   .profile-header {
     flex-direction: column !important;
     text-align: center !important;
@@ -1583,7 +1775,7 @@ input[type="checkbox"]:checked {
 
   .profile-stats-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.3rem !important;
+    gap: 0.4rem !important;
   }
 
   .profile-stat-card {
@@ -1594,20 +1786,42 @@ input[type="checkbox"]:checked {
     font-size: 0.9rem !important;
   }
 
-  /* Export */
+  .profile-name {
+    font-size: 1.1rem !important;
+  }
+
+  /* ===== EXPORT ===== */
   .export-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.4rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .export-card {
+    padding: 0.75rem !important;
+  }
+
+  .export-icon {
+    font-size: 1.5rem !important;
   }
 
   .export-all-buttons {
-    flex-direction: column !important;
+    flex-direction: row !important;
   }
 
-  /* Value bets */
+  .export-all-buttons .btn-metrika-export {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.4rem !important;
+  }
+
+  .btn-metrika-export {
+    font-size: 0.7rem !important;
+    padding: 0.4rem !important;
+  }
+
+  /* ===== VALUE BETS ===== */
   .stats-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.3rem !important;
+    gap: 0.4rem !important;
   }
 
   .value-bet-main {
@@ -1616,33 +1830,147 @@ input[type="checkbox"]:checked {
   }
 
   .value-bet-analysis {
-    flex-direction: column !important;
-    gap: 0.3rem !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 0.3rem 1rem !important;
+    padding: 0.5rem !important;
   }
 
-  /* Tips */
+  .value-bet-recommendation {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.4rem !important;
+  }
+
+  .value-bet-recommendation .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ===== TIPS ===== */
+  .tip-card {
+    padding: 0.75rem !important;
+  }
+
   .tip-header {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 0.3rem !important;
   }
 
+  .tip-stats {
+    font-size: 0.7rem !important;
+  }
+
+  .tip-title {
+    font-size: 0.85rem !important;
+  }
+
+  .tip-description {
+    font-size: 0.75rem !important;
+  }
+
   .tip-footer {
-    flex-direction: column !important;
-    align-items: stretch !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
   }
 
   .tip-footer .btn {
-    width: 100% !important;
-    justify-content: center !important;
+    font-size: 0.6rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  /* ===== TIP DETAIL ===== */
+  .tip-detail-card {
+    padding: 1rem !important;
+  }
+
+  .tip-detail-title {
+    font-size: 1rem !important;
+  }
+
+  .bet-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    font-size: 0.7rem !important;
+  }
+
+  .comments-section {
+    padding: 1rem !important;
+  }
+
+  /* ===== ADMIN ===== */
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  /* ===== BOTÕES ===== */
+  .btn {
+    font-size: 0.65rem !important;
+    padding: 0.3rem 0.6rem !important;
+  }
+
+  .btn-sm {
+    font-size: 0.55rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .btn-primary {
+    font-size: 0.65rem !important;
+  }
+
+  .btn-secondary {
+    font-size: 0.65rem !important;
+  }
+
+  .btn-danger {
+    font-size: 0.65rem !important;
+  }
+
+  /* ===== FLASH MESSAGES ===== */
+  .flash-message {
+    padding: 0.4rem 0.6rem !important;
+    font-size: 0.7rem !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  /* ===== RECENT BETS (cards) ===== */
+  .bet-item-card {
+    padding: 0.5rem !important;
+  }
+
+  .bet-title {
+    font-size: 0.7rem !important;
+  }
+
+  .bet-date {
+    font-size: 0.55rem !important;
+  }
+
+  .bet-item-details {
+    font-size: 0.6rem !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  .tag {
+    font-size: 0.5rem !important;
+    padding: 0.1rem 0.4rem !important;
+  }
+
+  /* ===== LINKS ===== */
+  .link-green {
+    font-size: 0.65rem !important;
   }
 }
 
-/* Telemóveis muito pequenos */
+/* ============================================================
+   TELEMÓVEIS MUITO PEQUENOS
+   ============================================================ */
 @media (max-width: 400px) {
   .kpi-grid {
     grid-template-columns: 1fr 1fr !important;
-    gap: 0.15rem !important;
+    gap: 0.3rem !important;
   }
 
   .kpi-card {
@@ -1650,7 +1978,7 @@ input[type="checkbox"]:checked {
   }
 
   .kpi-value {
-    font-size: 0.75rem !important;
+    font-size: 0.85rem !important;
   }
 
   .insights-grid {
@@ -1661,67 +1989,68 @@ input[type="checkbox"]:checked {
     grid-template-columns: 1fr 1fr !important;
   }
 
+  .bankroll-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
   .stat-card {
-    padding: 0.3rem !important;
+    padding: 0.4rem !important;
   }
 
   .stat-value {
     font-size: 0.7rem !important;
   }
 
-  .btn {
+  .perf-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .profile-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .filter-form select {
+    min-width: 60px !important;
     font-size: 0.5rem !important;
     padding: 0.2rem 0.3rem !important;
   }
 
   .table-responsive table {
     font-size: 0.5rem !important;
-    min-width: 480px;
+    min-width: 400px !important;
   }
 
   .table-responsive th,
   .table-responsive td {
-    padding: 0.15rem 0.2rem !important;
+    padding: 0.15rem 0.25rem !important;
+  }
+
+  .bet-type-profit {
+    font-size: 0.7rem !important;
   }
 
   .balance-value {
     font-size: 1.2rem !important;
   }
 
-  .bet-item-card {
-    padding: 0.3rem !important;
+  .mobile-actions .btn-primary-mobile {
+    font-size: 0.65rem !important;
+    padding: 6px 12px !important;
   }
 
-  .bet-title {
+  .mobile-actions .btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .form-actions-bottom .btn {
     font-size: 0.6rem !important;
+    padding: 0.3rem !important;
+    min-width: 60px !important;
   }
-
-  .bet-item-details {
-    font-size: 0.5rem !important;
-  }
-
-  .tag {
-    font-size: 0.4rem !important;
-    padding: 0.05rem 0.2rem !important;
-  }
-
-  .donut-placeholder {
-    width: 50px !important;
-    height: 50px !important;
-    border-width: 4px !important;
-  }
-
-  .donut-val {
-    font-size: 0.5rem !important;
-  }
-}
-
-/* Animação para o menu mobile */
-@keyframes slideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-.sidebar.open {
-  animation: slideIn 0.3s ease-out;
 }
