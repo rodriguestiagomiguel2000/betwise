@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card-metrika">
+  <div class="card-header">
+    <h3 class="card-title-sub">📥 Import Data</h3>
+    <a href="{{ url_for('index') }}" class="link-green">← Back</a>
+  </div>
+
+  <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-sm);">
+    <h4 style="margin-bottom: 0.5rem;">📋 Instructions</h4>
+    <ul style="color: var(--text-muted); font-size: 0.85rem; list-style: disc; padding-left: 1.5rem;">
+      <li><strong>Supported Formats:</strong> CSV files exported from BETWISE</li>
+      <li><strong>Import Order:</strong> 
+        <ol style="margin-top: 0.3rem; padding-left: 1.5rem;">
+          <li>Bookmakers</li>
+          <li>Bankrolls</li>
+          <li>Bets</li>
+        </ol>
+      </li>
+      <li>Each file type must be imported separately</li>
+      <li>Existing records will be updated, duplicates will be skipped</li>
+    </ul>
+  </div>
+
+  <form action="{{ url_for('import_data') }}" method="POST" enctype="multipart/form-data">
+    <!-- Tipo de importação -->
+    <div class="form-group-custom" style="margin-bottom: 1.5rem;">
+      <label style="font-weight: 600; color: var(--text-main);">
+        📂 Import Type <span style="color: var(--accent-red);">*</span>
+      </label>
+      <select name="import_type" class="input-metrika" required onchange="toggleBankrollField(this.value)" style="padding: 0.65rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
+        <option value="">-- Select type --</option>
+        <option value="bookmakers">📚 Bookmakers</option>
+        <option value="bankrolls">🏦 Bankrolls</option>
+        <option value="bets">🎲 Bets</option>
+      </select>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">
+        Select the type of data you are importing
+      </small>
+    </div>
+
+    <!-- Bankroll selector (apenas para bets) -->
+    <div class="form-group-custom" id="bankrollField" style="margin-bottom: 1.5rem; display: none;">
+      <label style="font-weight: 600; color: var(--text-main);">
+        🏦 Bankroll <span style="color: var(--accent-red);">*</span>
+      </label>
+      <select name="bankroll_id" class="input-metrika" style="padding: 0.65rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
+        <option value="">-- Select a bankroll --</option>
+        {% for bankroll in bankrolls %}
+        <option value="{{ bankroll.id }}">{{ bankroll.name }} ({{ bankroll.currency }} - {{ bankroll.starting_balance }}€)</option>
+        {% endfor %}
+      </select>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">
+        All imported bets will be assigned to this bankroll
+      </small>
+    </div>
+
+    <!-- File Input -->
+    <div class="form-group-custom" style="margin-bottom: 1.5rem;">
+      <label style="font-weight: 600; color: var(--text-main);">
+        📄 CSV File <span style="color: var(--accent-red);">*</span>
+      </label>
+      <input type="file" name="file" accept=".csv" required style="padding: 0.5rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Select a CSV file exported from BETWISE</small>
+    </div>
+
+    <button type="submit" class="btn-metrika-submit" style="background: var(--accent-purple); width: 100%; padding: 0.75rem;">
+      📥 Import Data
+    </button>
+  </form>
+</div>
+
+<script>
+function toggleBankrollField(value) {
+    var bankrollField = document.getElementById('bankrollField');
+    if (value === 'bets') {
+        bankrollField.style.display = 'block';
+    } else {
+        bankrollField.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

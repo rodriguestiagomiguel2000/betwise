@@ -3,6 +3,8 @@ import os
 import base64
 import time
 import json
+import csv 
+import io
 import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
@@ -2677,80 +2679,225 @@ def export_all():
 @login_required
 def import_data():
     bankrolls = Bankroll.query.filter_by(user_id=current_user.id).order_by(Bankroll.name.asc()).all()
+    
     if request.method == "POST":
         file = request.files.get("file")
+        import_type = request.form.get("import_type")
+        
         if not file or file.filename == "":
             flash("No file uploaded", "error")
             return redirect(request.url)
-        bankroll_id = request.form.get("bankroll_id")
-        if not bankroll_id:
-            flash("Please select a bankroll for the imported bets", "error")
+        
+        if not import_type:
+            flash("Please select the type of data to import", "error")
             return redirect(request.url)
-        try:
-            bankroll_id = int(bankroll_id)
-            bankroll = Bankroll.query.get(bankroll_id)
-            if not bankroll:
-                flash("Selected bankroll not found", "error")
-                return redirect(request.url)
-        except ValueError:
-            flash("Invalid bankroll selection", "error")
-            return redirect(request.url)
+        
         try:
             content = file.read().decode('utf-8-sig')
             lines = content.splitlines()
-            imported_count = 0
-            errors = []
-            current_bet = None
-            current_legs = []
-            reading_data = False
             
-            for line in lines:
-                line = line.strip()
-                if not line:
-                    continue
-                if line.startswith('METRIKA') or line.startswith('Bets List') or line.startswith('Period;') or line.startswith('Generated;'):
-                    continue
-                if line.startswith('Total bets') or line.startswith('Simple bets') or line.startswith('Combined bets'):
-                    continue
-                if line.startswith('TOTALS;'):
-                    continue
-                if line.startswith('#;Date;Type;Event;Selection;Market;Sport;Bookmaker;Odds;Stake (€);Result;Profit (€)'):
-                    reading_data = True
-                    continue
-                if not reading_data:
-                    continue
-                parts = line.split(';')
-                if parts[0].strip().isdigit():
-                    if current_bet:
-                        save_bet_with_legs(current_bet, current_legs, bankroll_id)
-                        imported_count += 1
-                    current_bet = parse_bet_row(parts)
-                    current_legs = []
-                    if len(parts) > 11 and parts[11] and parts[11].strip():
-                        leg = create_leg_from_row(parts, 1)
-                        if leg:
-                            current_legs.append(leg)
-                else:
-                    if current_bet:
-                        leg = create_leg_from_row(parts, 0)
-                        if leg:
-                            current_legs.append(leg)
-            if current_bet:
-                save_bet_with_legs(current_bet, current_legs, bankroll_id)
-                imported_count += 1
-            db.session.commit()
-            if errors:
-                flash(f"Imported {imported_count} bets with {len(errors)} errors.", "warning")
-                for error in errors[:5]:
-                    flash(f"Error: {error}", "error")
+            if import_type == "bookmakers":
+                imported = import_bookmakers(lines, current_user.id)
+                flash(f"✅ {imported} bookmakers imported successfully!", "success")
+            elif import_type == "bankrolls":
+                imported = import_bankrolls(lines, current_user.id)
+                flash(f"✅ {imported} bankrolls imported successfully!", "success")
+            elif import_type == "bets":
+                # Obter o bankroll_id para as bets
+                bankroll_id = request.form.get("bankroll_id")
+                if not bankroll_id:
+                    flash("Please select a bankroll for the bets", "error")
+                    return redirect(request.url)
+                imported = import_bets(lines, current_user.id, int(bankroll_id))
+                flash(f"✅ {imported} bets imported successfully!", "success")
             else:
-                flash(f"Successfully imported {imported_count} bets to '{bankroll.name}'!", "success")
-            return redirect(url_for("bets_list"))
+                flash("Invalid import type", "error")
+            
+            return redirect(url_for("import_data"))
+            
         except Exception as e:
-            db.session.rollback()
-            flash(f"Error reading file: {str(e)}", "error")
+            flash(f"Error importing: {str(e)}", "error")
             return redirect(request.url)
+    
     return render_template("import_data.html", bankrolls=bankrolls)
+
+def import_bookmakers(lines, user_id):
+    """Importa bookmakers a partir de um CSV"""
+    imported = 0
+    reader = csv.DictReader(lines)
+    
+    for row in reader:
+        name = row.get('Name', '').strip()
+        currency = row.get('Currency', 'EUR').strip()
+        starting_balance = float(row.get('Starting Balance', 0) or 0)
+        
+        if not name:
+            continue
+        
+        # Verificar se já existe
+        existing = Bookmaker.query.filter_by(name=name, user_id=user_id).first()
+        if existing:
+            # Atualizar
+            existing.currency = currency
+            existing.starting_balance = starting_balance
+        else:
+            # Criar
+            bookmaker = Bookmaker(
+                name=name,
+                currency=currency,
+                starting_balance=starting_balance,
+                user_id=user_id
+            )
+            db.session.add(bookmaker)
+        
+        imported += 1
+    
+    db.session.commit()
+    return imported
+
+def import_bankrolls(lines, user_id):
+    """Importa bankrolls a partir de um CSV"""
+    imported = 0
+    reader = csv.DictReader(lines)
+    
+    bankrolls_data = {}
+    
+    for row in reader:
+        bankroll_id = int(row.get('Bankroll ID', 0))
+        name = row.get('Bankroll Name', '').strip()
+        currency = row.get('Currency', 'EUR').strip()
+        starting_balance = float(row.get('Starting Balance', 0) or 0)
+        
+        if not name:
+            continue
+        
+        # Verificar se o bankroll já existe
+        existing = Bankroll.query.filter_by(name=name, user_id=user_id).first()
+        
+        if existing:
+            bankroll = existing
+        else:
+            bankroll = Bankroll(
+                name=name,
+                currency=currency,
+                starting_balance=starting_balance,
+                user_id=user_id
+            )
+            db.session.add(bankroll)
+            db.session.flush()
+            imported += 1
+        
+        # Processar transações se existirem
+        tx_type = row.get('Transaction Type', '').strip()
+        tx_amount = row.get('Amount', '').strip()
+        
+        if tx_type and tx_amount:
+            amount = float(tx_amount or 0)
+            if amount > 0:
+                bookmaker_name = row.get('Bookmaker', '').strip()
+                bookmaker = None
+                if bookmaker_name:
+                    bookmaker = Bookmaker.query.filter_by(name=bookmaker_name, user_id=user_id).first()
+                
+                tx = Transaction(
+                    bankroll_id=bankroll.id,
+                    type=tx_type,
+                    amount=amount,
+                    notes=row.get('Notes', ''),
+                    bookmaker_id=bookmaker.id if bookmaker else None
+                )
+                db.session.add(tx)
+    
+    db.session.commit()
+    return imported
+
+def import_bets(lines, user_id, bankroll_id):
+    """Importa bets a partir de um CSV"""
+    imported = 0
+    reader = csv.DictReader(lines)
+    
+    for row in reader:
+        try:
+            # Obter bookmaker
+            bookmaker_name = row.get('Bookmaker', '').strip()
+            bookmaker_id = None
+            if bookmaker_name:
+                bookmaker = Bookmaker.query.filter_by(name=bookmaker_name, user_id=user_id).first()
+                if bookmaker:
+                    bookmaker_id = bookmaker.id
+                else:
+                    # Criar bookmaker se não existir
+                    new_book = Bookmaker(name=bookmaker_name, user_id=user_id)
+                    db.session.add(new_book)
+                    db.session.flush()
+                    bookmaker_id = new_book.id
+            
+            # Parse da data
+            placed_at = None
+            date_str = row.get('Placed At', '').strip()
+            if date_str:
+                try:
+                    placed_at = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    placed_at = datetime.utcnow()
+            else:
+                placed_at = datetime.utcnow()
+            
+            # Parse do stake
+            stake = None
+            stake_str = row.get('Stake', '').strip()
+            if stake_str:
+                try:
+                    stake = float(stake_str)
+                except ValueError:
+                    stake = None
+            
+            # Parse das odds
+            total_odds = None
+            odds_str = row.get('Total Odds', '').strip()
+            if odds_str:
+                try:
+                    total_odds = float(odds_str)
+                except ValueError:
+                    total_odds = None
+            
+            # Parse do potencial retorno
+            potential_return = None
+            return_str = row.get('Potential Return', '').strip()
+            if return_str:
+                try:
+                    potential_return = float(return_str)
+                except ValueError:
+                    potential_return = None
+            
+            # Status
+            status = row.get('Status', 'open').strip().lower()
+            
+            # Criar bet
+            bet = Bet(
+                bookmaker=bookmaker_name,
+                bookmaker_id=bookmaker_id,
+                bankroll_id=bankroll_id,
+                sport=row.get('Sport', '').strip(),
+                market_type=row.get('Market Type', '').strip(),
+                total_odds=total_odds,
+                stake=stake,
+                potential_return=potential_return,
+                currency=row.get('Currency', 'EUR').strip(),
+                status=status,
+                placed_at=placed_at,
+                notes=row.get('Notes', ''),
+                user_id=user_id
+            )
+            db.session.add(bet)
+            imported += 1
+            
+        except Exception as e:
+            print(f"Error importing bet: {e}")
+            continue
+    
+    db.session.commit()
+    return imported
 
 def parse_bet_row(parts):
     return {
