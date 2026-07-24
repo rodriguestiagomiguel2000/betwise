@@ -1192,842 +1192,536 @@ input[type="checkbox"]:checked {
 }
 
 /* ============================================================
-   MOBILE FIRST - CORREÇÃO DEFINITIVA
+   MOBILE - VERSÃO MELHORADA
    ============================================================ */
 
-/* Telemóveis */
+/* Mobile Header - aparece apenas em mobile */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  height: 48px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-brand {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  padding: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.mobile-actions {
+  background: var(--accent-green);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: #000;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sidebar - escondida em mobile por padrão */
 @media (max-width: 768px) {
-    /* Sidebar - apenas ícones */
-    .sidebar {
-        width: 56px !important;
-        padding: 0.4rem 0.2rem !important;
-        overflow: hidden !important;
-    }
-
-    .brand-logo {
-        font-size: 1rem !important;
-        justify-content: center !important;
-        padding: 0.2rem !important;
-        margin-bottom: 0.3rem !important;
-    }
-    .brand-logo span:not(:first-child) {
-        display: none !important;
-    }
-
-    .btn-new-bet {
-        font-size: 0.5rem !important;
-        padding: 0.2rem !important;
-        border-radius: 4px !important;
-        margin-bottom: 0.5rem !important;
-        width: 100% !important;
-        text-align: center !important;
-    }
-
-    .menu-label {
-        display: none !important;
-    }
-
-    .menu-item {
-        justify-content: center !important;
-        font-size: 1.1rem !important;
-        padding: 0.35rem !important;
-        border-radius: 4px !important;
-    }
-    .menu-item span {
-        display: none !important;
-    }
-    .menu-item.active {
-        border-left: none !important;
-        background: rgba(34, 197, 94, 0.15) !important;
-    }
-
-    /* Main com sidebar compacta */
-    .main-wrapper {
-        margin-left: 56px !important;
-    }
-
-    /* Topbar */
-    .topbar {
-        height: 44px !important;
-        padding: 0 0.5rem !important;
-        gap: 0.3rem !important;
-    }
-
-    .search-box {
-        display: none !important;
-    }
-
-    .topbar-right {
-        gap: 0.2rem !important;
-        flex: 1 !important;
-        justify-content: flex-end !important;
-        flex-wrap: nowrap !important;
-    }
-
-    .bankroll-selector {
-        padding: 0.1rem 0.3rem !important;
-        font-size: 0.5rem !important;
-        max-width: 100px !important;
-        border-radius: 4px !important;
-    }
-
-    .bankroll-label {
-        display: none !important;
-    }
-
-    .bankroll-dropdown {
-        font-size: 0.5rem !important;
-        max-width: 60px !important;
-        padding: 0.05rem 0.1rem !important;
-    }
-
-    .user-name {
-        display: none !important;
-    }
-
-    .user-link {
-        font-size: 0.55rem !important;
-        padding: 0.1rem 0.25rem !important;
-        border-radius: 4px !important;
-    }
-
-    /* Conteúdo */
-    .content-area {
-        padding: 0.4rem !important;
-    }
-
-    /* Cards */
-    .card-metrika {
-        padding: 0.5rem !important;
-        margin-bottom: 0.5rem !important;
-        border-radius: 6px !important;
-    }
-
-    .card-title {
-        font-size: 0.85rem !important;
-    }
-
-    .card-header {
-        margin-bottom: 0.5rem !important;
-    }
-
-    /* Títulos */
-    .page-title {
-        font-size: 1rem !important;
-        margin-bottom: 0.1rem !important;
-    }
-
-    .page-subtitle {
-        font-size: 0.65rem !important;
-        margin-bottom: 0.75rem !important;
-    }
-
-    /* KPIs - 2 colunas */
-    .kpi-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.3rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .kpi-card {
-        padding: 0.4rem 0.5rem !important;
-        border-radius: 6px !important;
-    }
-
-    .kpi-value {
-        font-size: 0.9rem !important;
-    }
-
-    .kpi-label {
-        font-size: 0.5rem !important;
-    }
-
-    .kpi-icon {
-        font-size: 0.8rem !important;
-    }
-
-    /* Dashboard rows */
-    .dashboard-row-2 {
-        grid-template-columns: 1fr !important;
-        gap: 0.4rem !important;
-        margin-bottom: 0.4rem !important;
-    }
-
-    /* Insights */
-    .insights-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.3rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .insight-card {
-        padding: 0.4rem 0.5rem !important;
-        gap: 0.3rem !important;
-        border-radius: 6px !important;
-    }
-
-    .insight-icon {
-        font-size: 1rem !important;
-    }
-
-    .insight-label {
-        font-size: 0.45rem !important;
-    }
-
-    .insight-value {
-        font-size: 0.65rem !important;
-    }
-
-    /* Tabelas */
-    .table-responsive {
-        overflow-x: auto !important;
-        margin: 0 -0.4rem !important;
-        padding: 0 0.4rem !important;
-    }
-
-    .table-metrika {
-        font-size: 0.6rem !important;
-    }
-
-    .table-metrika th,
-    .table-metrika td {
-        padding: 0.25rem 0.3rem !important;
-        white-space: nowrap !important;
-    }
-
-    .table-metrika th {
-        font-size: 0.55rem !important;
-    }
-
-    /* Botões */
-    .btn {
-        font-size: 0.6rem !important;
-        padding: 0.2rem 0.4rem !important;
-        border-radius: 4px !important;
-    }
-
-    .btn-sm {
-        font-size: 0.5rem !important;
-        padding: 0.1rem 0.25rem !important;
-    }
-
-    /* Formulários */
-    .form-grid-2 {
-        grid-template-columns: 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    .form-group-custom {
-        margin-bottom: 0.3rem !important;
-    }
-
-    .form-group-custom label {
-        font-size: 0.6rem !important;
-    }
-
-    .form-group-custom input,
-    .form-group-custom select,
-    .form-group-custom textarea {
-        padding: 0.3rem 0.5rem !important;
-        font-size: 0.7rem !important;
-        border-radius: 4px !important;
-    }
-
-    /* Profile */
-    .profile-header {
-        flex-direction: column !important;
-        text-align: center !important;
-        padding: 0.75rem !important;
-        gap: 0.5rem !important;
-    }
-
-    .profile-avatar {
-        width: 48px !important;
-        height: 48px !important;
-        font-size: 1.5rem !important;
-    }
-
-    .profile-name {
-        font-size: 1rem !important;
-    }
-
-    .profile-email {
-        font-size: 0.7rem !important;
-    }
-
-    .profile-joined {
-        font-size: 0.6rem !important;
-    }
-
-    .profile-stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    .profile-stat-card {
-        padding: 0.4rem !important;
-    }
-
-    .profile-stat-value {
-        font-size: 0.9rem !important;
-    }
-
-    .profile-stat-label {
-        font-size: 0.5rem !important;
-    }
-
-    /* Recent bets */
-    .recent-bets-list {
-        gap: 0.4rem !important;
-    }
-
-    .bet-item-card {
-        padding: 0.35rem 0.5rem !important;
-        border-radius: 4px !important;
-    }
-
-    .bet-title {
-        font-size: 0.7rem !important;
-    }
-
-    .bet-date {
-        font-size: 0.5rem !important;
-    }
-
-    .bet-item-details {
-        gap: 0.3rem !important;
-        font-size: 0.6rem !important;
-        flex-wrap: wrap !important;
-    }
-
-    .bet-item-details strong {
-        font-size: 0.65rem !important;
-    }
-
-    .bet-item-tags {
-        gap: 0.2rem !important;
-        flex-wrap: wrap !important;
-    }
-
-    .tag {
-        font-size: 0.45rem !important;
-        padding: 0.05rem 0.25rem !important;
-        border-radius: 999px !important;
-    }
-
-    /* Auth pages */
-    .auth-card {
-        padding: 1rem !important;
-        margin: 0.5rem !important;
-        border-radius: 10px !important;
-    }
-
-    .auth-logo h1 {
-        font-size: 1.1rem !important;
-    }
-
-    .auth-logo span {
-        font-size: 0.65rem !important;
-    }
-
-    .auth-subtitle {
-        font-size: 0.7rem !important;
-        margin-bottom: 1rem !important;
-    }
-
-    .auth-card .form-group input {
-        font-size: 0.7rem !important;
-        padding: 0.4rem 0.6rem !important;
-    }
-
-    .btn-auth {
-        font-size: 0.75rem !important;
-        padding: 0.5rem !important;
-        border-radius: 6px !important;
-    }
-
-    .auth-footer {
-        font-size: 0.7rem !important;
-    }
-
-    /* Bankrolls */
-    .bankroll-cards {
-        grid-template-columns: 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    .bankroll-card {
-        padding: 0.4rem !important;
-        border-radius: 4px !important;
-    }
-
-    .bankroll-name {
-        font-size: 0.7rem !important;
-    }
-
-    .bankroll-initial {
-        font-size: 0.55rem !important;
-    }
-
-    .bankroll-card-stats {
-        padding: 0.3rem 0 !important;
-        gap: 0.2rem !important;
-    }
-
-    .stat-number {
-        font-size: 0.7rem !important;
-    }
-
-    .stat-label-small {
-        font-size: 0.45rem !important;
-    }
-
-    .bankroll-active {
-        font-size: 0.55rem !important;
-    }
-
-    /* Stats cards */
-    .stat-card {
-        padding: 0.4rem 0.5rem !important;
-    }
-
-    .stat-value {
-        font-size: 0.85rem !important;
-    }
-
-    .stat-label {
-        font-size: 0.45rem !important;
-    }
-
-    .bankroll-stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    /* Performance */
-    .performance-body {
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        flex-wrap: wrap !important;
-    }
-
-    .donut-placeholder {
-        width: 50px !important;
-        height: 50px !important;
-        border-width: 5px !important;
-    }
-
-    .donut-val {
-        font-size: 0.6rem !important;
-    }
-
-    .perf-stats {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.1rem 0.4rem !important;
-        flex: 1 !important;
-    }
-
-    .perf-stats > div {
-        font-size: 0.55rem !important;
-        gap: 0.2rem !important;
-    }
-
-    .perf-stats strong {
-        font-size: 0.7rem !important;
-    }
-
-    /* Balance card */
-    .balance-card {
-        padding: 0.5rem !important;
-    }
-
-    .balance-value {
-        font-size: 1.5rem !important;
-    }
-
-    .balance-actions .btn {
-        font-size: 0.55rem !important;
-        padding: 0.15rem 0.4rem !important;
-    }
-
-    .balance-label {
-        font-size: 0.6rem !important;
-    }
-
-    /* Quick stats */
-    .quick-stats-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 0.2rem !important;
-    }
-
-    .quick-stat {
-        padding: 0.3rem !important;
-    }
-
-    .quick-stat-value {
-        font-size: 0.7rem !important;
-    }
-
-    .quick-stat-label {
-        font-size: 0.45rem !important;
-    }
-
-    /* Manage funds header */
-    .manage-funds-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.3rem !important;
-        margin-bottom: 0.75rem !important;
-    }
-
-    /* Streaks */
-    .streaks-modern {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        justify-content: space-around !important;
-        gap: 0.3rem !important;
-    }
-
-    .streak-value {
-        font-size: 1rem !important;
-    }
-
-    .streak-label {
-        font-size: 0.5rem !important;
-    }
-
-    /* Bet types */
-    .bet-types-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    .bet-type-card {
-        padding: 0.5rem !important;
-    }
-
-    .bet-type-profit {
-        font-size: 0.9rem !important;
-    }
-
-    /* Export */
-    .export-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.4rem !important;
-    }
-
-    .export-card {
-        padding: 0.6rem !important;
-    }
-
-    .export-icon {
-        font-size: 1.5rem !important;
-    }
-
-    .export-description {
-        font-size: 0.65rem !important;
-    }
-
-    .btn-metrika-export {
-        font-size: 0.65rem !important;
-        padding: 0.3rem 0.6rem !important;
-    }
-
-    .export-all-buttons {
-        flex-direction: column !important;
-    }
-
-    /* Value bets */
-    .value-bet-card {
-        padding: 0.5rem !important;
-    }
-
-    .value-bet-main {
-        flex-direction: column !important;
-        gap: 0.1rem !important;
-    }
-
-    .value-bet-analysis {
-        flex-direction: column !important;
-        gap: 0.1rem !important;
-        padding: 0.3rem 0.5rem !important;
-    }
-
-    .value-bet-recommendation {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.3rem !important;
-    }
-
-    /* Admin */
-    .admin-stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.3rem !important;
-    }
-
-    /* New bet */
-    .new-bet-layout {
-        grid-template-columns: 1fr !important;
-        gap: 0.5rem !important;
-    }
-
-    .plus-icon-circle {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 1rem !important;
-    }
-
-    .new-bet-title-container h1 {
-        font-size: 1rem !important;
-    }
-
-    .section-label {
-        font-size: 0.6rem !important;
-    }
-
-    .field-hint {
-        font-size: 0.6rem !important;
-    }
-
-    .toggle-card {
-        padding: 0.4rem 0 !important;
-    }
-
-    .toggle-info strong {
-        font-size: 0.7rem !important;
-    }
-
-    .switch {
-        width: 34px !important;
-        height: 20px !important;
-    }
-
-    .switch .slider::before {
-        height: 14px !important;
-        width: 14px !important;
-    }
-
-    .switch input:checked + .slider::before {
-        transform: translateX(14px) !important;
-    }
-
-    .form-actions-bottom {
-        flex-direction: column !important;
-        gap: 0.3rem !important;
-    }
-
-    .form-actions-bottom .btn {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-
-    .btn-metrika-clear,
-    .btn-metrika-save {
-        padding: 0.4rem !important;
-        font-size: 0.7rem !important;
-    }
-
-    /* Modal */
-    #deleteModal > div {
-        padding: 1rem !important;
-        margin: 1rem !important;
-        width: auto !important;
-        max-width: 90% !important;
-    }
-
-    #deleteModal h3 {
-        font-size: 0.9rem !important;
-    }
-
-    #deleteModal p {
-        font-size: 0.75rem !important;
-    }
-
-    /* Flash messages */
-    .flash-message {
-        padding: 0.3rem 0.5rem !important;
-        font-size: 0.65rem !important;
-        border-radius: 4px !important;
-    }
+  .mobile-header {
+    display: flex !important;
+  }
+
+  body.metrika-body {
+    padding-top: 48px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 48px;
+    left: -280px;
+    width: 280px !important;
+    height: calc(100vh - 48px);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 150;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    padding: 1rem 0.75rem !important;
+    overflow-y: auto;
+    box-shadow: 4px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 140;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  /* Mostrar textos na sidebar mobile */
+  .sidebar .brand-logo span:not(:first-child),
+  .sidebar .menu-label,
+  .sidebar .menu-item span {
+    display: inline !important;
+  }
+
+  .sidebar .brand-logo {
+    justify-content: flex-start !important;
+    padding: 0 0.5rem 0.75rem !important;
+    font-size: 0.9rem !important;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar .menu-item {
+    justify-content: flex-start !important;
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.7rem !important;
+    gap: 0.6rem;
+  }
+
+  .sidebar .btn-new-bet {
+    font-size: 0.75rem !important;
+    padding: 0.4rem !important;
+    margin: 0.5rem 0 1rem !important;
+  }
+
+  /* Main content - sem margem da sidebar */
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  .topbar {
+    display: none !important;
+  }
+
+  .content-area {
+    padding: 0.5rem !important;
+  }
+
+  /* Tabela responsiva com scroll horizontal */
+  .table-responsive {
+    margin: 0 -0.5rem !important;
+    padding: 0 0.5rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    font-size: 0.6rem !important;
+    min-width: 600px;
+  }
+
+  .table-responsive th,
+  .table-responsive td {
+    padding: 0.3rem 0.4rem !important;
+    white-space: nowrap;
+  }
+
+  /* KPIs - 2 colunas mas maiores */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .kpi-card {
+    padding: 0.6rem !important;
+  }
+
+  .kpi-value {
+    font-size: 1rem !important;
+  }
+
+  .kpi-label {
+    font-size: 0.5rem !important;
+  }
+
+  /* Insights - 2 colunas */
+  .insights-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .insight-card {
+    padding: 0.6rem !important;
+  }
+
+  .insight-value {
+    font-size: 0.7rem !important;
+  }
+
+  .insight-label {
+    font-size: 0.5rem !important;
+  }
+
+  .insight-icon {
+    font-size: 1rem !important;
+  }
+
+  /* Dashboard row - empilhar */
+  .dashboard-row-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Performance card */
+  .performance-body {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    text-align: center;
+  }
+
+  .donut-placeholder {
+    width: 70px !important;
+    height: 70px !important;
+    border-width: 6px !important;
+  }
+
+  .perf-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.2rem 0.5rem !important;
+  }
+
+  .perf-stats > div {
+    font-size: 0.6rem !important;
+  }
+
+  .perf-stats strong {
+    font-size: 0.75rem !important;
+  }
+
+  /* Bankrolls */
+  .bankroll-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.3rem !important;
+  }
+
+  .stat-card {
+    padding: 0.5rem !important;
+  }
+
+  .stat-value {
+    font-size: 0.85rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.5rem !important;
+  }
+
+  .bankroll-cards {
+    grid-template-columns: 1fr !important;
+    gap: 0.3rem !important;
+  }
+
+  .bankroll-card {
+    padding: 0.5rem !important;
+  }
+
+  .bankroll-name {
+    font-size: 0.7rem !important;
+  }
+
+  /* Botões */
+  .btn {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+
+  .btn-sm {
+    font-size: 0.5rem !important;
+    padding: 0.15rem 0.3rem !important;
+  }
+
+  /* Filtros - empilhar */
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .header-actions {
+    width: 100% !important;
+  }
+
+  .filter-form {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 0.3rem !important;
+  }
+
+  .filter-form select {
+    width: 100% !important;
+    padding: 0.4rem !important;
+    font-size: 0.65rem !important;
+  }
+
+  /* Card header - flex wrap */
+  .card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+
+  .card-header > div {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* New bet page */
+  .new-bet-layout {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.3rem !important;
+  }
+
+  .form-actions-bottom {
+    flex-direction: column !important;
+    gap: 0.3rem !important;
+  }
+
+  .form-actions-bottom .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Upload - Vision card */
+  .card-vision {
+    padding: 0.75rem !important;
+  }
+
+  /* Bookmakers table */
+  .bookmakers-table td,
+  .bookmakers-table th {
+    font-size: 0.6rem !important;
+    padding: 0.3rem 0.4rem !important;
+  }
+
+  /* Bankroll header */
+  .bankroll-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Manage funds */
+  .quick-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.2rem !important;
+  }
+
+  .quick-stat {
+    padding: 0.3rem !important;
+  }
+
+  .quick-stat-value {
+    font-size: 0.7rem !important;
+  }
+
+  .balance-actions {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  /* Performance stats */
+  .performance-stats {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .perf-big-number {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+
+  .perf-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .streaks-grid {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+
+  /* Bet types */
+  .bet-types-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Profile */
+  .profile-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+
+  .profile-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.3rem !important;
+  }
+
+  .profile-stat-card {
+    padding: 0.5rem !important;
+  }
+
+  .profile-stat-value {
+    font-size: 0.9rem !important;
+  }
+
+  /* Export */
+  .export-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.4rem !important;
+  }
+
+  .export-all-buttons {
+    flex-direction: column !important;
+  }
+
+  /* Value bets */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.3rem !important;
+  }
+
+  .value-bet-main {
+    flex-direction: column !important;
+    gap: 0.3rem !important;
+  }
+
+  .value-bet-analysis {
+    flex-direction: column !important;
+    gap: 0.3rem !important;
+  }
+
+  /* Tips */
+  .tip-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.3rem !important;
+  }
+
+  .tip-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .tip-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
 }
 
 /* Telemóveis muito pequenos */
 @media (max-width: 400px) {
-    .sidebar {
-        width: 44px !important;
-        padding: 0.2rem !important;
-    }
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.15rem !important;
+  }
 
-    .main-wrapper {
-        margin-left: 44px !important;
-    }
+  .kpi-card {
+    padding: 0.4rem !important;
+  }
 
-    .brand-logo {
-        font-size: 0.8rem !important;
-    }
+  .kpi-value {
+    font-size: 0.75rem !important;
+  }
 
-    .menu-item {
-        font-size: 0.9rem !important;
-        padding: 0.25rem !important;
-    }
+  .insights-grid {
+    grid-template-columns: 1fr !important;
+  }
 
-    .btn-new-bet {
-        font-size: 0.4rem !important;
-        padding: 0.15rem !important;
-    }
+  .quick-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
 
-    .kpi-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.15rem !important;
-    }
+  .stat-card {
+    padding: 0.3rem !important;
+  }
 
-    .kpi-card {
-        padding: 0.25rem 0.3rem !important;
-    }
+  .stat-value {
+    font-size: 0.7rem !important;
+  }
 
-    .kpi-value {
-        font-size: 0.7rem !important;
-    }
+  .btn {
+    font-size: 0.5rem !important;
+    padding: 0.2rem 0.3rem !important;
+  }
 
-    .kpi-label {
-        font-size: 0.4rem !important;
-    }
+  .table-responsive table {
+    font-size: 0.5rem !important;
+    min-width: 480px;
+  }
 
-    .insights-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.15rem !important;
-    }
+  .table-responsive th,
+  .table-responsive td {
+    padding: 0.15rem 0.2rem !important;
+  }
 
-    .insight-card {
-        padding: 0.3rem 0.4rem !important;
-    }
+  .balance-value {
+    font-size: 1.2rem !important;
+  }
 
-    .insight-value {
-        font-size: 0.6rem !important;
-    }
+  .bet-item-card {
+    padding: 0.3rem !important;
+  }
 
-    .insight-label {
-        font-size: 0.4rem !important;
-    }
+  .bet-title {
+    font-size: 0.6rem !important;
+  }
 
-    .bankroll-cards {
-        grid-template-columns: 1fr !important;
-    }
+  .bet-item-details {
+    font-size: 0.5rem !important;
+  }
 
-    .perf-stats {
-        grid-template-columns: 1fr 1fr !important;
-    }
+  .tag {
+    font-size: 0.4rem !important;
+    padding: 0.05rem 0.2rem !important;
+  }
 
-    .profile-stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-    }
+  .donut-placeholder {
+    width: 50px !important;
+    height: 50px !important;
+    border-width: 4px !important;
+  }
 
-    .quick-stats-grid {
-        grid-template-columns: 1fr 1fr !important;
-    }
+  .donut-val {
+    font-size: 0.5rem !important;
+  }
+}
 
-    .bankroll-dropdown {
-        max-width: 40px !important;
-        font-size: 0.4rem !important;
-    }
+/* Animação para o menu mobile */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
 
-    .bankroll-selector {
-        max-width: 60px !important;
-        padding: 0.05rem 0.2rem !important;
-    }
-
-    .user-link {
-        font-size: 0.45rem !important;
-        padding: 0.05rem 0.15rem !important;
-    }
-
-    .topbar {
-        height: 38px !important;
-        padding: 0 0.3rem !important;
-    }
-
-    .page-title {
-        font-size: 0.85rem !important;
-    }
-
-    .page-subtitle {
-        font-size: 0.55rem !important;
-    }
-
-    .content-area {
-        padding: 0.2rem !important;
-    }
-
-    .card-metrika {
-        padding: 0.3rem !important;
-        margin-bottom: 0.3rem !important;
-        border-radius: 4px !important;
-    }
-
-    .table-metrika {
-        font-size: 0.5rem !important;
-    }
-
-    .table-metrika th,
-    .table-metrika td {
-        padding: 0.15rem 0.2rem !important;
-    }
-
-    .btn {
-        font-size: 0.5rem !important;
-        padding: 0.15rem 0.3rem !important;
-    }
-
-    .btn-sm {
-        font-size: 0.4rem !important;
-        padding: 0.08rem 0.2rem !important;
-    }
-
-    .form-group-custom input,
-    .form-group-custom select {
-        padding: 0.2rem 0.3rem !important;
-        font-size: 0.6rem !important;
-    }
-
-    .balance-value {
-        font-size: 1.2rem !important;
-    }
-
-    .stat-value {
-        font-size: 0.7rem !important;
-    }
-
-    .donut-placeholder {
-        width: 40px !important;
-        height: 40px !important;
-        border-width: 4px !important;
-    }
-
-    .donut-val {
-        font-size: 0.5rem !important;
-    }
-
-    .auth-card {
-        padding: 0.75rem !important;
-        margin: 0.25rem !important;
-    }
-
-    .auth-logo h1 {
-        font-size: 0.9rem !important;
-    }
-
-    .auth-logo span {
-        font-size: 0.55rem !important;
-    }
-
-    .auth-card .form-group input {
-        font-size: 0.6rem !important;
-        padding: 0.3rem 0.4rem !important;
-    }
-
-    .btn-auth {
-        font-size: 0.65rem !important;
-        padding: 0.4rem !important;
-    }
+.sidebar.open {
+  animation: slideIn 0.3s ease-out;
 }

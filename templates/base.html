@@ -17,10 +17,29 @@
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
   <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" type="image/x-icon">
   
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
 </head>
 <body class="metrika-body">
 
+  <!-- ===== MOBILE HEADER ===== -->
+  <header class="mobile-header">
+    <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <span class="mobile-brand">{{ APP_LOGO }} {{ APP_NAME }}</span>
+    <a href="{{ url_for('upload') }}" class="mobile-actions" aria-label="New bet">
+      +
+    </a>
+  </header>
+  
+  <!-- ===== OVERLAY PARA FECHAR MENU MOBILE ===== -->
+  <div class="sidebar-overlay" onclick="closeMobileMenu()"></div>
+
+  <!-- ===== SIDEBAR ===== -->
   <aside class="sidebar">
     <div class="brand-logo">
       <span>{{ APP_LOGO }}</span>
@@ -61,6 +80,7 @@
     </div>
   </aside>
 
+  <!-- ===== MAIN CONTENT ===== -->
   <div class="main-wrapper">
     <header class="topbar">
       <div class="search-box">
@@ -112,6 +132,56 @@
   </div>
 
   <script>
+  // ============================================================
+  // MOBILE MENU
+  // ============================================================
+  function toggleMobileMenu() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    
+    if (!sidebar) return;
+    
+    sidebar.classList.toggle('open');
+    
+    if (overlay) {
+      overlay.classList.toggle('active');
+    }
+    
+    // Prevenir scroll do body quando menu aberto
+    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+  }
+
+  function closeMobileMenu() {
+    var sidebar = document.querySelector('.sidebar');
+    var overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  // Fechar menu ao clicar fora (já está no overlay via onclick)
+  // Fechar menu com tecla ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeMobileMenu();
+    }
+  });
+
+  // Fechar menu ao clicar num link de navegação
+  document.addEventListener('DOMContentLoaded', function() {
+    var menuLinks = document.querySelectorAll('.sidebar .menu-item, .sidebar .btn-new-bet');
+    menuLinks.forEach(function(link) {
+      link.addEventListener('click', function() {
+        // Pequeno delay para garantir que a navegação acontece
+        setTimeout(closeMobileMenu, 150);
+      });
+    });
+  });
+
+  // ============================================================
+  // CHANGE ACTIVE BANKROLL
+  // ============================================================
   function changeActiveBankroll(bankrollId) {
     if (!bankrollId) return;
     
@@ -134,7 +204,9 @@
     });
   }
 
-  // Service Worker
+  // ============================================================
+  // SERVICE WORKER (PWA)
+  // ============================================================
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('/static/sw.js')
