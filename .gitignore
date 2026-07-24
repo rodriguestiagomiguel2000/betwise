@@ -15,3 +15,13 @@ logs/
 *.db-journal
 *.sqlite-journal
 backups/
+
+# Ficheiros de importação com dados sensíveis
+*_import.csv
+*.csv
+
+# Ficheiros de ambiente
+.env
+.env.local
+.env.production
+.env.example
