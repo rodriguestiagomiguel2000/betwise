@@ -87,12 +87,12 @@ if database_url:
     # Garantir que é postgresql:// (não postgres://)
     database_url = re.sub(r'^postgres://', 'postgresql://', database_url)
     
-    # Adicionar parâmetros de conexão
+    # Adicionar parâmetros de conexão se não existirem
     if '?' not in database_url:
         database_url += '?sslmode=require&connect_timeout=30'
     
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print("✅ Usando PostgreSQL (Supabase) com IPv4")
+    print("✅ Usando PostgreSQL (Supabase)")
 else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(INSTANCE_PATH, "bets.db")
     print("⚠️ Usando SQLite (local)")
@@ -136,7 +136,19 @@ def load_user(user_id):
 def get_active_bankroll():
     """Retorna o bankroll ativo do utilizador atual ou None"""
     if current_user.is_authenticated:
-        return Bankroll.query.filter_by(user_id=current_user.id, is_active=True).first()
+        # Tentar encontrar o ativo
+        active = Bankroll.query.filter_by(user_id=current_user.id, is_active=True).first()
+        if active:
+            return active
+        
+        # Se não houver ativo, definir o primeiro como ativo
+        first = Bankroll.query.filter_by(user_id=current_user.id).first()
+        if first:
+            first.is_active = True
+            db.session.commit()
+            return first
+        
+        return None
     return None
 
 # ===== FUNÇÃO PARA OBTER PRÓXIMO ID =====
