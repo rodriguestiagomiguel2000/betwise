@@ -1,10 +1,13 @@
 # app.py - Parte 1: Imports, Configuração e Modelos (CORRIGIDA)
+
 import os
 import base64
 import time
 import json
 import csv 
 import io
+import re
+import socket  # <-- ADICIONADO
 import requests
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
@@ -13,7 +16,6 @@ from logging.handlers import RotatingFileHandler
 import sys
 from functools import wraps
 import traceback
-import re  # <-- ADICIONADO para substituir postgres://
 
 from flask import (
     Flask,
@@ -41,7 +43,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Garantir que o diretório instance existe
 INSTANCE_PATH = os.path.join(BASE_DIR, 'instance')
 if not os.path.exists(INSTANCE_PATH):
     os.makedirs(INSTANCE_PATH)
@@ -49,14 +50,11 @@ if not os.path.exists(INSTANCE_PATH):
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Debug das variáveis de ambiente
 print(f"DEBUG: GEMINI_API_KEY = {'*' * len(GEMINI_API_KEY) if GEMINI_API_KEY else 'NOT SET'}")
-print(f"DEBUG: All environment variables: {list(os.environ.keys())}")
 
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set in .env or environment variables")
 
-# Gemini Flash endpoint
 GEMINI_MODEL = "gemini-1.5-flash"
 GEMINI_ENDPOINT = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
@@ -67,17 +65,35 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-in-production")
 
 # ===== CONFIGURAÇÃO DA BASE DE DADOS =====
-# 1. Tentar obter a URL do PostgreSQL a partir das variáveis de ambiente
 database_url = os.environ.get('DATABASE_URL')
 
-# 2. Se existir, usar PostgreSQL (Supabase)
 if database_url:
-    # O Supabase usa 'postgres://' mas SQLAlchemy precisa 'postgresql://'
+    # Forçar IPv4
+    try:
+        # Extrair hostname da URL
+        # Formato: postgresql://user:pass@hostname:port/db
+        parts = database_url.split('@')
+        if len(parts) == 2:
+            host_part = parts[1].split(':')[0]
+            # Resolver hostname para IPv4
+            ipv4 = socket.gethostbyname(host_part)
+            print(f"🔍 Resolvido {host_part} para IPv4: {ipv4}")
+            # Substituir hostname pelo IPv4
+            database_url = database_url.replace(host_part, ipv4)
+            print("✅ Forçando IPv4 para conexão PostgreSQL")
+    except Exception as e:
+        print(f"⚠️ Não foi possível resolver IPv4: {e}")
+    
+    # Garantir que é postgresql:// (não postgres://)
     database_url = re.sub(r'^postgres://', 'postgresql://', database_url)
+    
+    # Adicionar parâmetros de conexão
+    if '?' not in database_url:
+        database_url += '?sslmode=require&connect_timeout=30'
+    
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    print("✅ Usando PostgreSQL (Supabase)")
+    print("✅ Usando PostgreSQL (Supabase) com IPv4")
 else:
-    # 3. Fallback para SQLite (local)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(INSTANCE_PATH, "bets.db")
     print("⚠️ Usando SQLite (local)")
 
