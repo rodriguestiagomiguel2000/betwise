@@ -64,6 +64,9 @@ else:
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+GEMINI_PROXY_URL = os.environ.get("GEMINI_PROXY_URL")
+print(f"🔍 GEMINI_PROXY_URL: {'✅' if GEMINI_PROXY_URL else '❌'}")
+
 # ====== DEBUG - VERIFICAR VARIÁVEIS DE AMBIENTE ======
 print("=" * 60)
 print("🔍 DEBUG - VARIÁVEIS DE AMBIENTE")
@@ -621,10 +624,13 @@ Rules:
 """
 
 def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: float = 2.0) -> Dict[str, Any]:
-    """Chama a API Gemini para extrair dados de um talão de apostas."""
+    """Chama a API Gemini através do Cloudflare Worker (contorna restrições de localização)."""
     
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY not configured.")
+    
+    if not GEMINI_PROXY_URL:
+        raise RuntimeError("GEMINI_PROXY_URL not configured. Please add it to environment variables.")
     
     prompt = build_gemini_prompt()
 
@@ -635,6 +641,7 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
     models_to_try = [
         "gemini-3.1-flash-lite",
         "gemini-2.0-flash",
+        "gemini-2.5-flash",
         "gemini-flash-latest",
     ]
     
@@ -656,22 +663,22 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
     last_error = None
 
     for model in models_to_try:
-        # ===== USAR API KEY COMO PARÂMETRO URL =====
-        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-        print(f"🔍 Tentando modelo: {model}")
+        print(f"🔍 Tentando modelo via proxy: {model}")
         
         for attempt in range(max_retries):
             try:
-                # NÃO usar o header x-goog-api-key
+                # Chamar o proxy Cloudflare
                 headers = {
                     "Content-Type": "application/json",
+                    "X-API-Key": GEMINI_API_KEY,
+                    "X-Model": model,
                 }
                 
-                resp = requests.post(endpoint, headers=headers, json=payload, timeout=120)
+                resp = requests.post(GEMINI_PROXY_URL, headers=headers, json=payload, timeout=120)
                 print(f"   Status code: {resp.status_code}")
                 
                 if resp.status_code == 200:
-                    print(f"✅ Modelo {model} funcionou!")
+                    print(f"✅ Modelo {model} funcionou via proxy!")
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
                     
@@ -684,33 +691,21 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
                     
                     return json.loads(cleaned)
                     
-                elif resp.status_code == 400:
-                    error_detail = resp.text[:300] if resp.text else "Sem detalhes"
-                    print(f"❌ Erro 400: {error_detail}")
-                    
-                    # Se for erro de localização, tentar próximo modelo
-                    if "location" in error_detail.lower() or "not supported" in error_detail.lower():
-                        print("   ⚠️ Erro de localização - a API pode não estar disponível nesta região")
-                        last_error = resp
-                        break
-                    
-                    time.sleep(base_delay * (attempt + 1))
-                    continue
-                    
                 elif resp.status_code == 429:
                     print(f"⚠️ Limite excedido (429)")
                     time.sleep(base_delay * (attempt + 1) * 2)
                     continue
                     
-                elif resp.status_code == 404:
-                    print(f"⚠️ Modelo {model} não encontrado")
-                    break
-                    
                 else:
-                    print(f"⚠️ Erro: {resp.status_code}")
+                    print(f"⚠️ Erro: {resp.status_code} - {resp.text[:200]}")
                     last_error = resp
                     break
                     
+            except requests.Timeout:
+                print(f"⚠️ Timeout com modelo {model}")
+                last_error = "Timeout"
+                continue
+                
             except Exception as e:
                 print(f"⚠️ Erro: {e}")
                 last_error = e
