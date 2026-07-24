@@ -1320,7 +1320,8 @@ input[type="checkbox"]:checked {
     padding: 1rem 0.75rem !important;
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 160;
-    overflow-y: auto;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
   }
 
@@ -1598,32 +1599,123 @@ input[type="checkbox"]:checked {
     font-size: 0.8rem !important;
   }
 
-  /* ===== BOOKMAKERS ===== */
+  /* ===== BOOKMAKERS - TABELA COMPACTA ===== */
+  .bookmakers-table th:nth-child(2),
+  .bookmakers-table td:nth-child(2) {
+    display: none !important; /* Currency */
+  }
+  
+  .bookmakers-table th:nth-child(3),
+  .bookmakers-table td:nth-child(3) {
+    display: none !important; /* Starting */
+  }
+  
+  .bookmakers-table th:nth-child(5),
+  .bookmakers-table td:nth-child(5) {
+    display: none !important; /* Profit */
+  }
+  
+  .bookmakers-table th,
+  .bookmakers-table td {
+    font-size: 0.55rem !important;
+    padding: 0.2rem 0.3rem !important;
+    white-space: nowrap;
+  }
+  
+  .bookmakers-table td:first-child {
+    font-weight: 600;
+    font-size: 0.6rem !important;
+  }
+  
+  .bookmakers-table td:nth-child(4) {
+    font-weight: 700;
+    color: var(--accent-green);
+    font-size: 0.65rem !important;
+  }
+  
+  .bookmakers-table td:last-child .btn-update-balance,
+  .bookmakers-table td:last-child .btn-link-danger {
+    font-size: 0.45rem !important;
+    padding: 0.1rem 0.2rem !important;
+  }
+  
+  .bookmakers-table td:last-child .link-green {
+    font-size: 0.5rem !important;
+  }
+
   .bankroll-grid {
     grid-template-columns: 1fr !important;
     gap: 0.75rem !important;
   }
 
-  .bookmakers-table td,
-  .bookmakers-table th {
-    font-size: 0.6rem !important;
-    padding: 0.3rem 0.4rem !important;
+  /* ===== HISTORY (bets.html) ===== */
+  .bets-table {
+    font-size: 0.55rem;
+    min-width: 420px;
   }
-
-  /* ===== BETS (history) ===== */
-  .card-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.5rem !important;
+  
+  .bets-table th,
+  .bets-table td {
+    padding: 0.15rem 0.2rem;
   }
-
-  .card-header > div {
-    flex-wrap: wrap !important;
+  
+  .col-id { display: none !important; }
+  .col-sport { display: none !important; }
+  .col-market { display: none !important; }
+  .col-return { display: none !important; }
+  .col-date { display: none !important; }
+  .col-tags { display: none !important; }
+  
+  .col-bookmaker { font-size: 0.55rem; }
+  .col-bankroll { font-size: 0.5rem; }
+  .col-odds { font-size: 0.6rem; font-weight: 700; color: #818cf8; }
+  .col-stake { font-size: 0.5rem; font-weight: 600; }
+  .col-status .badge { font-size: 0.45rem; padding: 0.05rem 0.2rem; min-width: 32px; }
+  .col-actions .btn { font-size: 0.4rem; padding: 0.1rem 0.15rem; }
+  
+  .bets-table td:first-child input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
   }
-
-  .card-header .btn {
-    font-size: 0.6rem !important;
-    padding: 0.3rem 0.6rem !important;
+  
+  .header-actions-group {
+    gap: 0.2rem;
+  }
+  
+  .header-actions-group .btn {
+    font-size: 0.5rem;
+    padding: 0.15rem 0.3rem;
+  }
+  
+  .header-actions-group select {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.2rem;
+    max-width: 60px;
+  }
+  
+  .total-bets-label {
+    font-size: 0.5rem;
+  }
+  
+  .filter-form-inline {
+    gap: 0.15rem;
+  }
+  
+  .filter-form-inline .btn {
+    font-size: 0.45rem;
+    padding: 0.1rem 0.2rem;
+  }
+  
+  .actions-container {
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  
+  .actions-container .btn {
+    font-size: 0.4rem;
+    padding: 0.1rem 0.15rem;
+    min-width: 18px;
+    text-align: center;
   }
 
   /* ===== NEW BET (upload) ===== */
@@ -2052,5 +2144,43 @@ input[type="checkbox"]:checked {
     font-size: 0.6rem !important;
     padding: 0.3rem !important;
     min-width: 60px !important;
+  }
+
+  /* History ultra compacto */
+  .bets-table {
+    min-width: 320px !important;
+    font-size: 0.4rem !important;
+  }
+  
+  .bets-table th,
+  .bets-table td {
+    padding: 0.1rem 0.15rem !important;
+  }
+  
+  .col-bookmaker { font-size: 0.4rem !important; }
+  .col-bankroll { display: none !important; }
+  .col-odds { font-size: 0.45rem !important; }
+  .col-stake { font-size: 0.35rem !important; }
+  .col-status .badge { font-size: 0.3rem !important; padding: 0.05rem 0.1rem !important; min-width: 20px !important; }
+  
+  .header-actions-group .btn {
+    font-size: 0.35rem !important;
+    padding: 0.1rem 0.15rem !important;
+  }
+  
+  .header-actions-group select {
+    font-size: 0.35rem !important;
+    max-width: 35px !important;
+    padding: 0.05rem 0.1rem !important;
+  }
+  
+  .total-bets-label {
+    font-size: 0.4rem !important;
+  }
+  
+  .actions-container .btn {
+    font-size: 0.3rem !important;
+    padding: 0.05rem 0.1rem !important;
+    min-width: 12px !important;
   }
 }
