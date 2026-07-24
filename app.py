@@ -43,27 +43,44 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Garantir permissões
-try:
-    os.chmod(UPLOAD_FOLDER, 0o755)
-except Exception:
-    pass  # Ignorar se não for possível
+# Dar permissões 777 no Render
+if os.environ.get('RENDER') or os.environ.get('RENDER_EXTERNAL_URL'):
+    try:
+        os.chmod(UPLOAD_FOLDER, 0o777)
+        print(f"✅ Permissões definidas para {UPLOAD_FOLDER}")
+    except Exception as e:
+        print(f"⚠️ Não foi possível definir permissões: {e}")
 
 INSTANCE_PATH = os.path.join(BASE_DIR, 'instance')
 if not os.path.exists(INSTANCE_PATH):
     os.makedirs(INSTANCE_PATH)
 
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+# Carregar .env apenas se existir (local)
+if os.path.exists(os.path.join(BASE_DIR, ".env")):
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+    print("✅ .env carregado localmente")
+else:
+    print("ℹ️ .env não encontrado - usando variáveis de ambiente do sistema")
+
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-print(f"DEBUG: GEMINI_API_KEY = {'*' * len(GEMINI_API_KEY) if GEMINI_API_KEY else 'NOT SET'}")
+# ====== DEBUG - VERIFICAR VARIÁVEIS DE AMBIENTE ======
+print("=" * 60)
+print("🔍 DEBUG - VARIÁVEIS DE AMBIENTE")
+print("=" * 60)
+print(f"   GEMINI_API_KEY: {'✅ DEFINIDA' if GEMINI_API_KEY else '❌ NÃO DEFINIDA'}")
+if GEMINI_API_KEY:
+    print(f"   - Tamanho: {len(GEMINI_API_KEY)} caracteres")
+    print(f"   - Primeiros 10: {GEMINI_API_KEY[:10]}...")
+print(f"   UPLOAD_FOLDER: {UPLOAD_FOLDER}")
+print(f"   - Existe: {os.path.exists(UPLOAD_FOLDER)}")
+print("=" * 60)
 
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set in .env or environment variables")
 
-# Usar Gemini 3.1 Flash Lite (500 requests/dia)
+# Gemini Flash endpoint - usar Gemini 3.1 Flash Lite (500 requests/dia)
 GEMINI_MODEL = "gemini-3.1-flash-lite"
-
 GEMINI_ENDPOINT = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
@@ -606,17 +623,31 @@ Rules:
 def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: float = 2.0) -> Dict[str, Any]:
     """Chama a API Gemini para extrair dados de um talão de apostas."""
     
+    # ===== DEBUG =====
+    print("=" * 50)
+    print("🔍 DEBUG - call_gemini_on_betslip")
+    print(f"   - image_path: {image_path}")
+    print(f"   - GEMINI_API_KEY: {'✅' if GEMINI_API_KEY else '❌'}")
+    
+    # Verificar se o ficheiro existe
+    if os.path.exists(image_path):
+        file_size = os.path.getsize(image_path)
+        print(f"   - Ficheiro existe: ✅ ({file_size} bytes)")
+    else:
+        print(f"   - Ficheiro existe: ❌")
+        raise RuntimeError(f"Ficheiro não encontrado: {image_path}")
+    
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY not configured. Please set it in .env file.")
     
     prompt = build_gemini_prompt()
+    print("=" * 50)
 
     # ===== LER IMAGEM COM VERIFICAÇÃO =====
     try:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
         
-        # Verificar se a imagem foi lida corretamente
         if not image_bytes:
             raise RuntimeError(f"Imagem vazia ou não lida: {image_path}")
         
@@ -627,10 +658,8 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
     except Exception as e:
         raise RuntimeError(f"Erro ao ler imagem: {e}")
     
-    # ===== CODIFICAR PARA BASE64 =====
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
     
-    # Verificar se a codificação funcionou
     if not image_b64:
         raise RuntimeError("Falha ao codificar imagem para base64")
 
@@ -642,8 +671,6 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
         "gemini-flash-latest",
     ]
     
-    # ===== CONSTRUIR PAYLOAD =====
-    # Usar o formato correto para a API Gemini
     payload = {
         "contents": [
             {
@@ -677,7 +704,6 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
         
         for attempt in range(max_retries):
             try:
-                # Log do tamanho do payload (para debug)
                 import json
                 payload_size = len(json.dumps(payload))
                 print(f"   Tamanho do payload: {payload_size} bytes")
@@ -712,17 +738,14 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
                         raise RuntimeError(f"Resposta não é JSON válido: {cleaned[:200]}")
                     
                 elif resp.status_code == 400:
-                    # Erro 400 - ver o que a API diz
                     error_detail = resp.text[:500] if resp.text else "Sem detalhes"
                     print(f"❌ Erro 400 - Requisição inválida: {error_detail}")
                     last_error = resp
                     
-                    # Se for erro de imagem, tentar próximo modelo
                     if "image" in error_detail.lower() or "format" in error_detail.lower():
                         print("   ⚠️ Problema com a imagem, tentando próximo modelo...")
                         break
                     
-                    # Tentar novamente com delay
                     time.sleep(base_delay * (attempt + 1))
                     continue
                     
@@ -758,7 +781,6 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
                 last_error = e
                 break
     
-    # ===== SE CHEGOU AQUI, TODOS OS MODELOS FALHARAM =====
     error_msg = "Todos os modelos Gemini falharam"
     if last_error:
         if hasattr(last_error, 'status_code'):
@@ -2202,6 +2224,13 @@ def update_bookmaker_balance_manual(book_id):
 @login_required
 def upload():
     if request.method == "POST":
+        # ===== DEBUG =====
+        print("=" * 50)
+        print("📤 UPLOAD - DEBUG")
+        print(f"   - GEMINI_API_KEY: {'✅' if GEMINI_API_KEY else '❌'}")
+        print(f"   - UPLOAD_FOLDER: {UPLOAD_FOLDER}")
+        print("=" * 50)
+        
         file = request.files.get("image")
         if not file or file.filename == "":
             flash("No file uploaded", "error")
@@ -2214,11 +2243,12 @@ def upload():
         
         # ===== VERIFICAR SE O FICHEIRO FOI GUARDADO =====
         if not os.path.exists(filepath):
+            print(f"❌ Ficheiro NÃO guardado: {filepath}")
             flash("Erro ao guardar a imagem", "error")
             return redirect(request.url)
         
         file_size = os.path.getsize(filepath)
-        app.logger.info(f"📸 Ficheiro guardado: {filepath} ({file_size} bytes)")
+        print(f"✅ Ficheiro guardado: {filepath} ({file_size} bytes)")
         
         if file_size == 0:
             flash("Ficheiro vazio - tenta novamente", "error")
@@ -2236,13 +2266,13 @@ def upload():
         bookmaker_id = request.form.get('bookmaker_id') or request.form.get('bookmaker_id_combined')
         
         try:
-            app.logger.info("🔄 Chamando Gemini API...")
+            print("🔄 Chamando Gemini API...")
             gemini_data = call_gemini_on_betslip(filepath)
-            app.logger.info("✅ Gemini respondeu com sucesso!")
+            print("✅ Gemini respondeu com sucesso!")
         except Exception as e:
             import traceback
-            app.logger.error(f"❌ Erro no Gemini: {e}")
-            app.logger.error(traceback.format_exc())
+            print(f"❌ Erro no Gemini: {e}")
+            print(traceback.format_exc())
             flash(f"Error reading betslip with AI: {e}", "error")
             bet = Bet(
                 id=get_next_bet_id(),
@@ -2262,7 +2292,7 @@ def upload():
             return redirect(url_for("edit_bet", bet_id=bet.id))
         
         parsed = parse_betslip_from_gemini(gemini_data)
-        app.logger.info(f"📊 Dados extraídos: {parsed}")
+        print(f"📊 Dados extraídos: {parsed}")
 
         # ---- Lógica de Bookmaker ----
         if bookmaker_id:
@@ -2350,7 +2380,7 @@ def upload():
                           bankrolls=bankrolls, 
                           bookmakers=bookmakers,
                           active_bankroll=active_bankroll)
-
+    
 # ===== STATS =====
 @app.route("/stats")
 @login_required
