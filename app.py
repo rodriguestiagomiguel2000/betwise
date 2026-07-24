@@ -1572,16 +1572,25 @@ def transfer_funds():
 def manage_funds(roll_id):
     roll = Bankroll.query.filter_by(id=roll_id, user_id=current_user.id).first_or_404()
     books = Bookmaker.query.filter_by(user_id=current_user.id).order_by(Bookmaker.name.asc()).all()
-    net = sum(tx.amount if tx.type == "deposit" else -tx.amount for tx in roll.transactions)
+    
+    # Calcular saldo atual do bankroll
+    net = sum(
+        tx.amount if tx.type == "deposit" else -tx.amount
+        for tx in roll.transactions
+    )
     current_balance = roll.starting_balance + net
+    
+    # Balance nunca pode ser negativo
     if current_balance < 0:
         current_balance = 0.0
     
+    # Calcular estatísticas
     bets = Bet.query.filter_by(bankroll_id=roll.id).all()
     bets_count = len(bets)
     won_bets = sum(1 for b in bets if b.status == "won")
     lost_bets = sum(1 for b in bets if b.status == "lost")
     win_rate = (won_bets / bets_count * 100) if bets_count > 0 else 0
+    
     total_staked = sum(b.stake or 0 for b in bets)
     total_profit = 0
     for b in bets:
@@ -1597,14 +1606,18 @@ def manage_funds(roll_id):
                 total_profit -= b.stake
             elif b.status == "cashed_out" and b.cashed_out_amount and b.stake:
                 total_profit += b.cashed_out_amount - b.stake
+    
     yield_pct = (total_profit / total_staked * 100) if total_staked > 0 else 0
+    
     avg_odds = sum(b.total_odds or 0 for b in bets) / bets_count if bets_count > 0 else 0
     avg_stake = total_staked / bets_count if bets_count > 0 else 0
     
+    # Melhor e pior sequência
     streak = 0
     best_streak = 0
     worst_streak = 0
     current_streak = 0
+    
     for b in sorted(bets, key=lambda x: x.placed_at or datetime.min):
         if b.status == "won":
             streak = streak + 1 if streak >= 0 else 1
@@ -1612,49 +1625,28 @@ def manage_funds(roll_id):
             streak = streak - 1 if streak <= 0 else -1
         else:
             continue
+        
         if streak > best_streak:
             best_streak = streak
         if streak < worst_streak:
             worst_streak = streak
+    
     current_streak = streak
     
+    # ===== ESTATÍSTICAS POR BOOKMAKER =====
+    # SIMPLESMENTE USAR O CURRENT_BALANCE GUARDADO - NÃO RECALCULAR
     bookmaker_balances = {}
     for book in books:
         balance_record = BankrollBookmakerBalance.query.filter_by(
             bankroll_id=roll.id,
             bookmaker_id=book.id
         ).first()
+        
         if balance_record:
-            deposits = sum(
-                tx.amount for tx in roll.transactions
-                if tx.bookmaker_id == book.id and tx.type == "deposit"
-            )
-            withdrawals = sum(
-                tx.amount for tx in roll.transactions
-                if tx.bookmaker_id == book.id and tx.type == "withdrawal"
-            )
-            bets_impact = 0.0
-            for bet in bets:
-                if bet.bookmaker_id == book.id:
-                    if bet.is_freebet:
-                        if bet.status == "won" and bet.potential_return:
-                            bets_impact += bet.potential_return
-                        elif bet.status == "cashed_out" and bet.cashed_out_amount:
-                            bets_impact += bet.cashed_out_amount
-                    else:
-                        if bet.status == "won" and bet.potential_return and bet.stake:
-                            bets_impact += bet.potential_return - bet.stake
-                        elif bet.status == "lost" and bet.stake:
-                            bets_impact -= bet.stake
-                        elif bet.status == "cashed_out" and bet.cashed_out_amount and bet.stake:
-                            bets_impact += bet.cashed_out_amount - bet.stake
-            current = balance_record.starting_balance + deposits - withdrawals + bets_impact
-            if current < 0:
-                current = 0.0
-            balance_record.current_balance = current
-            db.session.commit()
-            bookmaker_balances[book.id] = round(current, 2)
+            # USAR O VALOR GUARDADO
+            bookmaker_balances[book.id] = round(balance_record.current_balance, 2)
         else:
+            # Criar balance record se não existir
             new_balance = BankrollBookmakerBalance(
                 bankroll_id=roll.id,
                 bookmaker_id=book.id,
@@ -1665,8 +1657,10 @@ def manage_funds(roll_id):
             db.session.commit()
             bookmaker_balances[book.id] = 0.0
     
+    # Estatísticas de apostas por tipo
     simple_bets = [b for b in bets if b.market_type and "Combined" not in b.market_type]
     combined_bets = [b for b in bets if b.market_type and "Combined" in b.market_type]
+    
     simple_profit = 0
     for b in simple_bets:
         if b.is_freebet:
@@ -1677,6 +1671,7 @@ def manage_funds(roll_id):
                 simple_profit += b.potential_return - b.stake
             elif b.status == "lost" and b.stake:
                 simple_profit -= b.stake
+    
     combined_profit = 0
     for b in combined_bets:
         if b.is_freebet:
@@ -1687,11 +1682,13 @@ def manage_funds(roll_id):
                 combined_profit += b.potential_return - b.stake
             elif b.status == "lost" and b.stake:
                 combined_profit -= b.stake
+    
     simple_won = sum(1 for b in simple_bets if b.status == "won")
     simple_lost = sum(1 for b in simple_bets if b.status == "lost")
     combined_won = sum(1 for b in combined_bets if b.status == "won")
     combined_lost = sum(1 for b in combined_bets if b.status == "lost")
     
+    # Estatísticas por desporto (apenas para apostas simples)
     sport_stats = {}
     for b in simple_bets:
         key = b.sport or "Desconhecido"
@@ -1707,31 +1704,41 @@ def manage_funds(roll_id):
                 sport_stats[key]["profit"] -= b.stake
         sport_stats[key]["count"] += 1
     
+    # Processar POST (depósito/levantamento)
     if request.method == "POST":
         tx_type = request.form.get("type")
         amount_raw = request.form.get("amount")
         bookmaker_id = request.form.get("bookmaker_id")
         notes = request.form.get("notes")
+        
         try:
             amount = float(amount_raw.replace(",", "."))
         except (TypeError, ValueError):
             flash("Invalid amount", "error")
             return redirect(url_for("manage_funds", roll_id=roll.id))
+        
         if amount <= 0:
             flash("Amount must be greater than zero", "error")
             return redirect(url_for("manage_funds", roll_id=roll.id))
+        
         if tx_type == "withdrawal":
+            # Verificar se há saldo suficiente no bankroll
             if amount > current_balance:
                 flash(f"Insufficient balance. Available: {current_balance} {roll.currency}", "error")
                 return redirect(url_for("manage_funds", roll_id=roll.id))
+            
+            # Verificar se há saldo suficiente no bookmaker selecionado
             if bookmaker_id:
                 balance_record = BankrollBookmakerBalance.query.filter_by(
                     bankroll_id=roll.id,
                     bookmaker_id=int(bookmaker_id)
                 ).first()
+                
                 if balance_record and balance_record.current_balance < amount:
                     flash(f"Insufficient balance in this bookmaker. Available: {balance_record.current_balance} {roll.currency}", "error")
                     return redirect(url_for("manage_funds", roll_id=roll.id))
+        
+        # Criar transação
         tx = Transaction(
             bankroll_id=roll.id,
             type=tx_type,
@@ -1741,14 +1748,21 @@ def manage_funds(roll_id):
         )
         db.session.add(tx)
         db.session.commit()
+        
+        # ===== ATUALIZAR O BALANCE DO BOOKMAKER =====
         if bookmaker_id:
             update_bookmaker_balance_from_transactions(roll.id, int(bookmaker_id))
+        
         flash(f"{tx_type.capitalize()} of {amount} {roll.currency} recorded successfully!", "success")
         return redirect(url_for("manage_funds", roll_id=roll.id))
     
+    # Últimas 5 transações
     recent_transactions = Transaction.query.filter_by(bankroll_id=roll.id).order_by(Transaction.created_at.desc()).limit(5).all()
+    
+    # Últimas 5 apostas
     recent_bets = Bet.query.filter_by(bankroll_id=roll.id).order_by(Bet.placed_at.desc()).limit(5).all()
     
+    # Dados do gráfico (profit acumulado)
     chart_labels = []
     chart_data = []
     cumulative = 0
@@ -1769,6 +1783,7 @@ def manage_funds(roll_id):
         chart_labels.append(b.placed_at.strftime("%d/%m") if b.placed_at else "N/A")
         chart_data.append(round(cumulative, 2))
     
+    # Obter todos os bankrolls para o modal de transferência (excluindo o atual)
     all_bankrolls = Bankroll.query.filter(Bankroll.id != roll.id, Bankroll.user_id == current_user.id).all()
     
     return render_template(
@@ -1804,10 +1819,12 @@ def manage_funds(roll_id):
     )
 
 def update_bookmaker_balance_from_transactions(bankroll_id, bookmaker_id):
+    """Atualiza o current_balance baseado nas transações (apenas quando há novas transações)"""
     balance_record = BankrollBookmakerBalance.query.filter_by(
         bankroll_id=bankroll_id,
         bookmaker_id=bookmaker_id
     ).first()
+    
     if not balance_record:
         balance_record = BankrollBookmakerBalance(
             bankroll_id=bankroll_id,
@@ -1817,7 +1834,9 @@ def update_bookmaker_balance_from_transactions(bankroll_id, bookmaker_id):
         )
         db.session.add(balance_record)
         db.session.flush()
+    
     roll = Bankroll.query.get(bankroll_id)
+    
     deposits = sum(
         tx.amount for tx in roll.transactions
         if tx.bookmaker_id == bookmaker_id and tx.type == "deposit"
@@ -1826,10 +1845,13 @@ def update_bookmaker_balance_from_transactions(bankroll_id, bookmaker_id):
         tx.amount for tx in roll.transactions
         if tx.bookmaker_id == bookmaker_id and tx.type == "withdrawal"
     )
+    
+    # Calcular impacto das apostas
     bets = Bet.query.filter_by(
         bookmaker_id=bookmaker_id,
         bankroll_id=bankroll_id
     ).all()
+    
     bets_impact = 0.0
     for bet in bets:
         if bet.is_freebet:
@@ -1844,11 +1866,15 @@ def update_bookmaker_balance_from_transactions(bankroll_id, bookmaker_id):
                 bets_impact -= bet.stake
             elif bet.status == "cashed_out" and bet.cashed_out_amount and bet.stake:
                 bets_impact += bet.cashed_out_amount - bet.stake
+    
     current = balance_record.starting_balance + deposits - withdrawals + bets_impact
+    
     if current < 0:
         current = 0.0
+    
     balance_record.current_balance = current
     db.session.commit()
+    
     return balance_record
 
 # app.py - Parte 7: Rotas de Bookmakers
@@ -1885,6 +1911,8 @@ def bookmakers_list():
     else:
         target_bankroll = active_bankroll
     
+    # ===== CALCULAR BALANÇO POR BOOKMAKER =====
+    # USAR O CURRENT_BALANCE GUARDADO - NÃO RECALCULAR
     balances = {}
     for book in books:
         if target_bankroll:
@@ -1894,10 +1922,8 @@ def bookmakers_list():
             ).first()
             
             if balance_record:
-                # ===== USAR O CURRENT_BALANCE GUARDADO =====
-                # NÃO RECALCULAR - usar o valor que foi guardado manualmente
+                # USAR O VALOR GUARDADO
                 balances[book.id] = round(balance_record.current_balance, 2)
-                print(f"Bookmaker {book.name}: current_balance = {balance_record.current_balance}")
             else:
                 # Criar balance record se não existir
                 new_balance = BankrollBookmakerBalance(
@@ -2042,6 +2068,7 @@ def update_bookmaker_balance_manual(book_id):
         return redirect(url_for("bookmakers_list", bankroll_id=bankroll_id))
     
     # ATUALIZAR DIRETAMENTE O CURRENT_BALANCE
+    # NÃO criar transação - apenas substituir o valor
     balance_record.current_balance = new_balance
     db.session.commit()
     
