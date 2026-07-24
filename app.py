@@ -43,6 +43,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# Garantir permissões
+try:
+    os.chmod(UPLOAD_FOLDER, 0o755)
+except Exception:
+    pass  # Ignorar se não for possível
+
 INSTANCE_PATH = os.path.join(BASE_DIR, 'instance')
 if not os.path.exists(INSTANCE_PATH):
     os.makedirs(INSTANCE_PATH)
@@ -605,28 +611,57 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
     
     prompt = build_gemini_prompt()
 
-    with open(image_path, "rb") as f:
-        image_bytes = f.read()
+    # ===== LER IMAGEM COM VERIFICAÇÃO =====
+    try:
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+        
+        # Verificar se a imagem foi lida corretamente
+        if not image_bytes:
+            raise RuntimeError(f"Imagem vazia ou não lida: {image_path}")
+        
+        print(f"📸 Imagem lida: {len(image_bytes)} bytes")
+        
+    except FileNotFoundError:
+        raise RuntimeError(f"Ficheiro de imagem não encontrado: {image_path}")
+    except Exception as e:
+        raise RuntimeError(f"Erro ao ler imagem: {e}")
+    
+    # ===== CODIFICAR PARA BASE64 =====
     image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    
+    # Verificar se a codificação funcionou
+    if not image_b64:
+        raise RuntimeError("Falha ao codificar imagem para base64")
 
-    # ===== MODELO PRINCIPAL: Gemini 3.1 Flash Lite =====
-    # Tem 500 requests/dia, muito melhor que o 3.5 Flash (apenas 20)
+    # ===== MODELOS POR ORDEM DE PREFERÊNCIA =====
     models_to_try = [
-        "gemini-3.1-flash-lite",   # ⭐ Principal - 500 requests/dia
-        "gemini-2.0-flash",        # Fallback se o principal falhar
-        "gemini-2.5-flash",        # Outro fallback
-        "gemini-flash-latest",     # Último recurso
+        "gemini-3.1-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
     ]
     
+    # ===== CONSTRUIR PAYLOAD =====
+    # Usar o formato correto para a API Gemini
     payload = {
         "contents": [
             {
                 "parts": [
                     {"text": prompt},
-                    {"inline_data": {"mime_type": "image/jpeg", "data": image_b64}}
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image_b64
+                        }
+                    }
                 ]
             }
-        ]
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 2048,
+        }
     }
 
     headers = {
@@ -642,12 +677,24 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
         
         for attempt in range(max_retries):
             try:
-                resp = requests.post(endpoint, headers=headers, json=payload, timeout=60)
+                # Log do tamanho do payload (para debug)
+                import json
+                payload_size = len(json.dumps(payload))
+                print(f"   Tamanho do payload: {payload_size} bytes")
+                
+                resp = requests.post(endpoint, headers=headers, json=payload, timeout=120)
+                
+                print(f"   Status code: {resp.status_code}")
                 
                 if resp.status_code == 200:
                     print(f"✅ Modelo {model} funcionou!")
                     data = resp.json()
-                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    
+                    try:
+                        text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    except (KeyError, IndexError) as e:
+                        print(f"❌ Estrutura de resposta inesperada: {data}")
+                        raise RuntimeError(f"Resposta inesperada da API: {data}")
                     
                     cleaned = text.strip()
                     if cleaned.startswith("```"):
@@ -656,38 +703,74 @@ def call_gemini_on_betslip(image_path: str, max_retries: int = 3, base_delay: fl
                             cleaned = cleaned[4:]
                         cleaned = cleaned.strip()
                     
-                    result = json.loads(cleaned)
-                    return result
+                    try:
+                        result = json.loads(cleaned)
+                        return result
+                    except json.JSONDecodeError as e:
+                        print(f"❌ Erro ao fazer parse do JSON: {e}")
+                        print(f"   Texto recebido: {cleaned[:200]}")
+                        raise RuntimeError(f"Resposta não é JSON válido: {cleaned[:200]}")
+                    
+                elif resp.status_code == 400:
+                    # Erro 400 - ver o que a API diz
+                    error_detail = resp.text[:500] if resp.text else "Sem detalhes"
+                    print(f"❌ Erro 400 - Requisição inválida: {error_detail}")
+                    last_error = resp
+                    
+                    # Se for erro de imagem, tentar próximo modelo
+                    if "image" in error_detail.lower() or "format" in error_detail.lower():
+                        print("   ⚠️ Problema com a imagem, tentando próximo modelo...")
+                        break
+                    
+                    # Tentar novamente com delay
+                    time.sleep(base_delay * (attempt + 1))
+                    continue
                     
                 elif resp.status_code == 404:
                     print(f"⚠️ Modelo {model} não encontrado (404)")
-                    break  # Tentar próximo modelo
+                    break
                     
                 elif resp.status_code == 429:
-                    print(f"⚠️ Limite de requests excedido (429) para {model}")
+                    print(f"⚠️ Limite de requests excedido (429)")
                     delay = base_delay * (attempt + 1)
                     print(f"   Aguardando {delay} segundos...")
                     time.sleep(delay)
                     continue
                     
                 elif resp.status_code == 503:
-                    print(f"⚠️ Serviço indisponível (503), tentando novamente...")
+                    print(f"⚠️ Serviço indisponível (503)")
                     time.sleep(base_delay * (attempt + 1))
                     continue
                     
                 else:
                     print(f"⚠️ Modelo {model} falhou: {resp.status_code}")
-                    if resp.text:
-                        print(f"   Resposta: {resp.text[:200]}")
+                    print(f"   Resposta: {resp.text[:200]}")
                     last_error = resp
                     break
                     
+            except requests.Timeout:
+                print(f"⚠️ Timeout com modelo {model}")
+                last_error = "Timeout"
+                continue
+                
             except requests.RequestException as e:
                 print(f"⚠️ Erro com modelo {model}: {e}")
                 last_error = e
                 break
     
-    raise RuntimeError(f"Todos os modelos Gemini falharam. Último erro: {last_error}")
+    # ===== SE CHEGOU AQUI, TODOS OS MODELOS FALHARAM =====
+    error_msg = "Todos os modelos Gemini falharam"
+    if last_error:
+        if hasattr(last_error, 'status_code'):
+            error_msg += f" - Último erro: {last_error.status_code}"
+            if hasattr(last_error, 'text'):
+                error_msg += f" - {last_error.text[:200]}"
+        elif isinstance(last_error, str):
+            error_msg += f" - {last_error}"
+        else:
+            error_msg += f" - {str(last_error)}"
+    
+    raise RuntimeError(error_msg)
 
 def parse_bet_in_background(bet_id: int, image_path: str):
     from app import app, db, Bet, BetLeg
@@ -2123,23 +2206,43 @@ def upload():
         if not file or file.filename == "":
             flash("No file uploaded", "error")
             return redirect(request.url)
+
         ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         filename = f"{ts}_{file.filename}"
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
+        
+        # ===== VERIFICAR SE O FICHEIRO FOI GUARDADO =====
+        if not os.path.exists(filepath):
+            flash("Erro ao guardar a imagem", "error")
+            return redirect(request.url)
+        
+        file_size = os.path.getsize(filepath)
+        app.logger.info(f"📸 Ficheiro guardado: {filepath} ({file_size} bytes)")
+        
+        if file_size == 0:
+            flash("Ficheiro vazio - tenta novamente", "error")
+            return redirect(request.url)
+
         is_freebet = request.form.get('is_freebet') == 'on'
         is_live = request.form.get('is_live') == 'on'
         bankroll_id = request.form.get('bankroll_id')
+        
         if not bankroll_id:
             active = get_active_bankroll()
             if active:
                 bankroll_id = str(active.id)
+                
         bookmaker_id = request.form.get('bookmaker_id') or request.form.get('bookmaker_id_combined')
+        
         try:
+            app.logger.info("🔄 Chamando Gemini API...")
             gemini_data = call_gemini_on_betslip(filepath)
+            app.logger.info("✅ Gemini respondeu com sucesso!")
         except Exception as e:
             import traceback
-            traceback.print_exc()
+            app.logger.error(f"❌ Erro no Gemini: {e}")
+            app.logger.error(traceback.format_exc())
             flash(f"Error reading betslip with AI: {e}", "error")
             bet = Bet(
                 id=get_next_bet_id(),
@@ -2155,11 +2258,20 @@ def upload():
             )
             db.session.add(bet)
             db.session.commit()
+            flash(f"Bet #{bet.id} created with errors. You can edit it manually.", "warning")
             return redirect(url_for("edit_bet", bet_id=bet.id))
+        
         parsed = parse_betslip_from_gemini(gemini_data)
+        app.logger.info(f"📊 Dados extraídos: {parsed}")
+
+        # ---- Lógica de Bookmaker ----
         if bookmaker_id:
-            matched_bookmaker_id = int(bookmaker_id)
-            raw_bookmaker_name = Bookmaker.query.get(matched_bookmaker_id).name if matched_bookmaker_id else None
+            try:
+                matched_bookmaker_id = int(bookmaker_id)
+                raw_bookmaker_name = Bookmaker.query.get(matched_bookmaker_id).name if matched_bookmaker_id else None
+            except ValueError:
+                matched_bookmaker_id = None
+                raw_bookmaker_name = None
         else:
             raw_bookmaker_name = parsed.get("bookmaker")
             matched_bookmaker_id = None
@@ -2176,18 +2288,21 @@ def upload():
                     db.session.add(new_book)
                     db.session.flush()
                     matched_bookmaker_id = new_book.id
+
         stake = parsed.get("stake")
         total_odds = parsed.get("total_odds")
         potential_return = round(stake * total_odds, 2) if (stake and total_odds) else None
+
         placed_at = parsed.get("placed_at")
         if not placed_at:
             placed_at = datetime.utcnow()
         else:
             try:
-                if placed_at.year < 2020 or placed_at.year > 2030:
+                if hasattr(placed_at, 'year') and (placed_at.year < 2020 or placed_at.year > 2030):
                     placed_at = datetime.utcnow()
             except AttributeError:
                 placed_at = datetime.utcnow()
+
         bet = Bet(
             id=get_next_bet_id(),
             bookmaker=raw_bookmaker_name,
@@ -2210,7 +2325,8 @@ def upload():
         )
         db.session.add(bet)
         db.session.flush()
-        legs: List[Dict[str, Any]] = parsed.get("legs") or []
+
+        legs = parsed.get("legs") or []
         for leg_data in legs:
             leg = BetLeg(
                 bet_id=bet.id,
@@ -2220,14 +2336,20 @@ def upload():
                 odds_decimal=leg_data.get("odds_decimal"),
             )
             db.session.add(leg)
+
         db.session.commit()
-        flash(f"Betslip uploaded! Bet #{bet.id} saved with bookmaker: {raw_bookmaker_name or 'AI detected'}, Freebet: {is_freebet}", "success")
+        flash(f"✅ Bet #{bet.id} uploaded! Bookmaker: {raw_bookmaker_name or 'AI detected'}, Freebet: {is_freebet}", "success")
         return redirect(url_for("edit_bet", bet_id=bet.id))
     
+    # GET - renderizar o formulário
     bankrolls = Bankroll.query.filter_by(user_id=current_user.id).all()
     bookmakers = Bookmaker.query.filter_by(user_id=current_user.id).all()
     active_bankroll = get_active_bankroll()
-    return render_template("upload.html", bankrolls=bankrolls, bookmakers=bookmakers, active_bankroll=active_bankroll)
+    
+    return render_template("upload.html", 
+                          bankrolls=bankrolls, 
+                          bookmakers=bookmakers,
+                          active_bankroll=active_bankroll)
 
 # ===== STATS =====
 @app.route("/stats")
