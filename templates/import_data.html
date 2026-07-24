@@ -1,4 +1,3 @@
-<!-- templates/import_data.html -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -11,46 +10,50 @@
   <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-input); border-radius: var(--radius-sm);">
     <h4 style="margin-bottom: 0.5rem;">📋 Instructions</h4>
     <ul style="color: var(--text-muted); font-size: 0.85rem; list-style: disc; padding-left: 1.5rem;">
-      <li><strong>Supported Format:</strong> CSV files exported from METRIKA or similar betting trackers</li>
-      <li><strong>File Structure:</strong> The system expects the standard METRIKA export format with headers and data rows</li>
-      <li><strong>Data Imported:</strong> Bets, legs (selections), bookmakers, results, and profit/loss</li>
-      <li><strong>Automatic Matching:</strong> Bookmakers are automatically created if they don't exist</li>
-      <li><strong>Bankroll:</strong> Select a bankroll below to assign all imported bets to it</li>
+      <li><strong>Supported Formats:</strong> CSV files exported from BETWISE</li>
+      <li><strong>Import Order:</strong> 
+        <ol style="margin-top: 0.3rem; padding-left: 1.5rem;">
+          <li>Bookmakers</li>
+          <li>Bankrolls</li>
+          <li>Bets</li>
+        </ol>
+      </li>
+      <li>Each file type must be imported separately</li>
+      <li>Existing records will be updated, duplicates will be skipped</li>
     </ul>
   </div>
 
-  <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: var(--radius-sm);">
-    <h4 style="margin-bottom: 0.5rem; color: var(--accent-purple);">✅ Example Format</h4>
-    <pre style="background: var(--bg-input); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.7rem; color: var(--text-muted); overflow-x: auto;">
-#;Date;Type;Event;Selection;Market;Sport;Bookmaker;Odds;Stake (€);Result;Profit (€)
-1;20/07/2026;Combined (2);Sporting KC II vs Minnesota;2;1X2;Football;Otra;3.11;5.00 €;Lost;-5.00 €
-;20/07/2026;Combined (2);Independiente vs Emelec;1;1X2;Football;Otra;;;Won;
-2;19/07/2026;Simple;Espanha vs Argentina;Lionel Messi Anytime;Anytime Goalscorer;Football;Betclic;2.78;5.00 €;Lost;-5.00 €
-    </pre>
-  </div>
-
   <form action="{{ url_for('import_data') }}" method="POST" enctype="multipart/form-data">
-    <!-- Selector de Bankroll -->
+    <!-- Tipo de importação -->
     <div class="form-group-custom" style="margin-bottom: 1.5rem;">
       <label style="font-weight: 600; color: var(--text-main);">
-        🏦 Select Bankroll <span style="color: var(--accent-red);">*</span>
+        📂 Import Type <span style="color: var(--accent-red);">*</span>
       </label>
-      <select name="bankroll_id" class="input-metrika" required style="padding: 0.65rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
+      <select name="import_type" class="input-metrika" required onchange="toggleBankrollField(this.value)" style="padding: 0.65rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
+        <option value="">-- Select type --</option>
+        <option value="bookmakers">📚 Bookmakers</option>
+        <option value="bankrolls">🏦 Bankrolls</option>
+        <option value="bets">🎲 Bets</option>
+      </select>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">
+        Select the type of data you are importing
+      </small>
+    </div>
+
+    <!-- Bankroll selector (apenas para bets) -->
+    <div class="form-group-custom" id="bankrollField" style="margin-bottom: 1.5rem; display: none;">
+      <label style="font-weight: 600; color: var(--text-main);">
+        🏦 Bankroll <span style="color: var(--accent-red);">*</span>
+      </label>
+      <select name="bankroll_id" class="input-metrika" style="padding: 0.65rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
         <option value="">-- Select a bankroll --</option>
         {% for bankroll in bankrolls %}
         <option value="{{ bankroll.id }}">{{ bankroll.name }} ({{ bankroll.currency }} - {{ bankroll.starting_balance }}€)</option>
-        {% else %}
-        <option value="" disabled>No bankrolls available. Please create one first.</option>
         {% endfor %}
       </select>
       <small style="color: var(--text-muted); font-size: 0.75rem;">
         All imported bets will be assigned to this bankroll
       </small>
-      {% if not bankrolls %}
-      <div style="margin-top: 0.5rem;">
-        <a href="{{ url_for('bankrolls_list') }}" class="link-green">+ Create a bankroll first</a>
-      </div>
-      {% endif %}
     </div>
 
     <!-- File Input -->
@@ -59,7 +62,7 @@
         📄 CSV File <span style="color: var(--accent-red);">*</span>
       </label>
       <input type="file" name="file" accept=".csv" required style="padding: 0.5rem !important; background: var(--bg-input) !important; border: 1px solid var(--border-color) !important; border-radius: var(--radius-sm) !important; color: var(--text-main) !important; width: 100%;">
-      <small style="color: var(--text-muted); font-size: 0.75rem;">Select a CSV file exported from METRIKA</small>
+      <small style="color: var(--text-muted); font-size: 0.75rem;">Select a CSV file exported from BETWISE</small>
     </div>
 
     <button type="submit" class="btn-metrika-submit" style="background: var(--accent-purple); width: 100%; padding: 0.75rem;">
@@ -67,4 +70,15 @@
     </button>
   </form>
 </div>
+
+<script>
+function toggleBankrollField(value) {
+    var bankrollField = document.getElementById('bankrollField');
+    if (value === 'bets') {
+        bankrollField.style.display = 'block';
+    } else {
+        bankrollField.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}
