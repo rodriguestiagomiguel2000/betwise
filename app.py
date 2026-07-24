@@ -3334,6 +3334,47 @@ with app.app_context():
     else:
         print(f"⚠️ USER_PASSWORD ou USER_EMAIL não definida. Utilizador {user_username} não criado.")
     
+    # ===== IMPORTAR UTILIZADOR DO JSON (se existir) =====
+    import json
+    import os
+    
+    if os.path.exists('my_user.json'):
+        try:
+            with open('my_user.json', 'r') as f:
+                user_data = json.load(f)
+            
+            print(f"📥 Importando utilizador do JSON: {user_data['username']}")
+            
+            user = User.query.filter_by(username=user_data['username']).first()
+            if user:
+                print(f"⚠️ Utilizador {user_data['username']} já existe. A atualizar...")
+                user.email = user_data['email']
+                user.password_hash = user_data['password_hash']
+                user.is_admin = user_data['is_admin']
+                user.is_active = user_data['is_active']
+                db.session.commit()
+                print(f"✅ Utilizador {user_data['username']} atualizado!")
+            else:
+                user = User(
+                    username=user_data['username'],
+                    email=user_data['email'],
+                    password_hash=user_data['password_hash'],
+                    is_admin=user_data['is_admin'],
+                    is_active=user_data['is_active']
+                )
+                db.session.add(user)
+                db.session.commit()
+                print(f"✅ Utilizador {user_data['username']} importado com sucesso!")
+            
+            # Apagar o ficheiro após importar (segurança)
+            # os.remove('my_user.json')
+            # print("🗑️ Ficheiro my_user.json removido")
+            
+        except Exception as e:
+            print(f"⚠️ Erro ao importar utilizador do JSON: {e}")
+    else:
+        print("ℹ️ Ficheiro my_user.json não encontrado.")
+    
     # ===== ASSOCIAR DADOS AO ADMIN =====
     try:
         admin = User.query.filter_by(username='admin').first()
@@ -3368,16 +3409,17 @@ with app.app_context():
     print(f"✅ Total de bankrolls: {Bankroll.query.count()}")
     print(f"✅ Total de bookmakers: {Bookmaker.query.count()}")
     print(f"✅ Total de bets: {Bet.query.count()}")
+    
+    # Listar utilizadores existentes
+    print("\n📋 Utilizadores existentes:")
+    for u in User.query.all():
+        print(f"   - {u.username} (ID: {u.id})")
 
 # ===== INICIALIZAÇÃO DA APP =====
 if __name__ == "__main__":
     debug = os.environ.get('FLASK_DEBUG', 'False') == 'True'
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=debug)
-# ===== INICIALIZAÇÃO DA APP =====
-if __name__ == "__main__":
-    debug = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=debug)
+
     
                 
