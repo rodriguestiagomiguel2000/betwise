@@ -1011,16 +1011,23 @@ def delete_bets_bulk():
 @login_required
 def quick_update_bet(bet_id):
     bet = Bet.query.filter_by(id=bet_id, user_id=current_user.id).first_or_404()
+
+    # Update bet status if provided
     new_bet_status = request.form.get("bet_status")
     if new_bet_status:
         bet.status = new_bet_status
+
+    # Update leg statuses if provided
     for leg in bet.legs:
         field_name = f"leg_status_{leg.id}"
         new_leg_status = request.form.get(field_name)
         if new_leg_status:
             leg.status = new_leg_status
+
+    # Recalculate bet status from legs if any leg status changed
     has_lost = any(leg.status == "lost" for leg in bet.legs)
     all_won = bet.legs and all(leg.status == "won" for leg in bet.legs)
+
     if has_lost:
         bet.status = "lost"
     elif all_won:
@@ -1028,61 +1035,126 @@ def quick_update_bet(bet_id):
     else:
         if not new_bet_status:
             bet.status = "open"
-    # Sync transactions
-    Transaction.query.filter_by(bet_id=bet.id).delete()
-    if bet.is_freebet:
-        if bet.status == "won" and bet.potential_return and bet.bankroll_id and bet.bookmaker_id:
-            db.session.add(Transaction(
-                bankroll_id=bet.bankroll_id,
-                bookmaker_id=bet.bookmaker_id,
-                bet_id=bet.id,
-                type="deposit",
-                amount=bet.potential_return,
-                notes=f"Freebet payout for bet #{bet.id}"
-            ))
-        elif bet.status == "cashed_out" and bet.cashed_out_amount and bet.bankroll_id and bet.bookmaker_id:
-            db.session.add(Transaction(
-                bankroll_id=bet.bankroll_id,
-                bookmaker_id=bet.bookmaker_id,
-                bet_id=bet.id,
-                type="deposit",
-                amount=bet.cashed_out_amount,
-                notes=f"Freebet cashout for bet #{bet.id}"
-            ))
-        db.session.commit()
-        flash(f"Bet #{bet.id} updated from list.", "success")
-        return redirect(url_for("index"))
-    if bet.bankroll_id and bet.bookmaker_id and bet.stake and bet.status != "open":
-        if bet.status in ("won", "lost", "cashed_out"):
-            db.session.add(Transaction(
-                bankroll_id=bet.bankroll_id,
-                bookmaker_id=bet.bookmaker_id,
-                bet_id=bet.id,
-                type="withdrawal",
-                amount=bet.stake,
-                notes=f"Stake for bet #{bet.id}"
-            ))
-        if bet.status == "won" and bet.potential_return:
-            db.session.add(Transaction(
-                bankroll_id=bet.bankroll_id,
-                bookmaker_id=bet.bookmaker_id,
-                bet_id=bet.id,
-                type="deposit",
-                amount=bet.potential_return,
-                notes=f"Payout for bet #{bet.id}"
-            ))
-        elif bet.status == "cashed_out" and bet.cashed_out_amount:
-            db.session.add(Transaction(
-                bankroll_id=bet.bankroll_id,
-                bookmaker_id=bet.bookmaker_id,
-                bet_id=bet.id,
-                type="deposit",
-                amount=bet.cashed_out_amount,
-                notes=f"Cashout for bet #{bet.id}"
-            ))
+
+    # ===== ATUALIZAR TRANSAÇÕES E BALANCE DO BOOKMAKER =====
+    sync_bet_transactions_and_balance(bet)
+
     db.session.commit()
     flash(f"Bet #{bet.id} updated from list.", "success")
     return redirect(url_for("index"))
+
+def sync_bet_transactions_and_balance(bet):
+    """Sincroniza as transações e atualiza o balance do bookmaker"""
+    
+    # Limpa transações automáticas anteriores desta aposta
+    Transaction.query.filter_by(bet_id=bet.id).delete()
+
+    if not bet.bankroll_id or not bet.bookmaker_id or not bet.stake:
+        print("DEBUG: Dados insuficientes para sincronizar")
+        return
+
+    if bet.status == "open":
+        return
+
+    # ===== BUSCAR BALANCE RECORD =====
+    balance_record = BankrollBookmakerBalance.query.filter_by(
+        bankroll_id=bet.bankroll_id,
+        bookmaker_id=bet.bookmaker_id
+    ).first()
+    
+    if not balance_record:
+        # Criar se não existir
+        balance_record = BankrollBookmakerBalance(
+            bankroll_id=bet.bankroll_id,
+            bookmaker_id=bet.bookmaker_id,
+            starting_balance=0.0,
+            current_balance=0.0
+        )
+        db.session.add(balance_record)
+        db.session.flush()
+
+    # ===== FREE BET =====
+    if bet.is_freebet:
+        if bet.status == "won" and bet.potential_return:
+            # Depósito do prémio (não há stake a deduzir)
+            tx_payout = Transaction(
+                bankroll_id=bet.bankroll_id,
+                bookmaker_id=bet.bookmaker_id,
+                bet_id=bet.id,
+                type="deposit",
+                amount=bet.potential_return,
+                notes=f"Freebet payout for bet #{bet.id}",
+            )
+            db.session.add(tx_payout)
+            
+            # ATUALIZAR BALANCE DO BOOKMAKER
+            balance_record.current_balance += bet.potential_return
+            
+        elif bet.status == "cashed_out" and bet.cashed_out_amount:
+            tx_cashout = Transaction(
+                bankroll_id=bet.bankroll_id,
+                bookmaker_id=bet.bookmaker_id,
+                bet_id=bet.id,
+                type="deposit",
+                amount=bet.cashed_out_amount,
+                notes=f"Freebet cashout for bet #{bet.id}",
+            )
+            db.session.add(tx_cashout)
+            
+            # ATUALIZAR BALANCE DO BOOKMAKER
+            balance_record.current_balance += bet.cashed_out_amount
+        return
+
+    # ===== APOSTA NORMAL =====
+    # 1. Retirada do valor apostado (Stake)
+    if bet.status in ("won", "lost", "cashed_out"):
+        tx_stake = Transaction(
+            bankroll_id=bet.bankroll_id,
+            bookmaker_id=bet.bookmaker_id,
+            bet_id=bet.id,
+            type="withdrawal",
+            amount=bet.stake,
+            notes=f"Stake for bet #{bet.id}",
+        )
+        db.session.add(tx_stake)
+        
+        # ATUALIZAR BALANCE DO BOOKMAKER (diminuir o stake)
+        balance_record.current_balance -= bet.stake
+
+    # 2. Depósito do prémio ou cashout
+    if bet.status == "won" and bet.potential_return:
+        tx_payout = Transaction(
+            bankroll_id=bet.bankroll_id,
+            bookmaker_id=bet.bookmaker_id,
+            bet_id=bet.id,
+            type="deposit",
+            amount=bet.potential_return,
+            notes=f"Payout for bet #{bet.id}",
+        )
+        db.session.add(tx_payout)
+        
+        # ATUALIZAR BALANCE DO BOOKMAKER (aumentar com o prémio)
+        balance_record.current_balance += bet.potential_return
+        
+    elif bet.status == "cashed_out" and bet.cashed_out_amount:
+        tx_cashout = Transaction(
+            bankroll_id=bet.bankroll_id,
+            bookmaker_id=bet.bookmaker_id,
+            bet_id=bet.id,
+            type="deposit",
+            amount=bet.cashed_out_amount,
+            notes=f"Cashout for bet #{bet.id}",
+        )
+        db.session.add(tx_cashout)
+        
+        # ATUALIZAR BALANCE DO BOOKMAKER (aumentar com o cashout)
+        balance_record.current_balance += bet.cashed_out_amount
+
+    # Garantir que o balance nunca fica negativo
+    if balance_record.current_balance < 0:
+        balance_record.current_balance = 0.0
+    
+    print(f"📊 Bookmaker balance atualizado: {balance_record.current_balance}")
 
 @app.route("/bets/<int:bet_id>/add_leg", methods=["POST"])
 @login_required
@@ -1128,106 +1200,64 @@ def edit_bet(bet_id):
         except ValueError:
             return None
 
-    def sync_bet_transactions(bet_obj: Bet):
-        Transaction.query.filter_by(bet_id=bet_obj.id).delete()
-        if not bet_obj.bankroll_id or not bet_obj.bookmaker_id or not bet_obj.stake:
-            return
-        if bet_obj.status == "open":
-            return
-        if bet_obj.is_freebet:
-            if bet_obj.status == "won" and bet_obj.potential_return:
-                tx_payout = Transaction(
-                    bankroll_id=bet_obj.bankroll_id,
-                    bookmaker_id=bet_obj.bookmaker_id,
-                    bet_id=bet_obj.id,
-                    type="deposit",
-                    amount=bet_obj.potential_return,
-                    notes=f"Freebet payout for bet #{bet_obj.id}",
-                )
-                db.session.add(tx_payout)
-            elif bet_obj.status == "cashed_out" and bet_obj.cashed_out_amount:
-                tx_cashout = Transaction(
-                    bankroll_id=bet_obj.bankroll_id,
-                    bookmaker_id=bet_obj.bookmaker_id,
-                    bet_id=bet_obj.id,
-                    type="deposit",
-                    amount=bet_obj.cashed_out_amount,
-                    notes=f"Freebet cashout for bet #{bet_obj.id}",
-                )
-                db.session.add(tx_cashout)
-            return
-        if bet_obj.status in ("won", "lost", "cashed_out"):
-            tx_stake = Transaction(
-                bankroll_id=bet_obj.bankroll_id,
-                bookmaker_id=bet_obj.bookmaker_id,
-                bet_id=bet_obj.id,
-                type="withdrawal",
-                amount=bet_obj.stake,
-                notes=f"Stake for bet #{bet_obj.id}",
-            )
-            db.session.add(tx_stake)
-        if bet_obj.status == "won" and bet_obj.potential_return:
-            tx_payout = Transaction(
-                bankroll_id=bet_obj.bankroll_id,
-                bookmaker_id=bet_obj.bookmaker_id,
-                bet_id=bet_obj.id,
-                type="deposit",
-                amount=bet_obj.potential_return,
-                notes=f"Payout for bet #{bet_obj.id}",
-            )
-            db.session.add(tx_payout)
-        elif bet_obj.status == "cashed_out" and bet_obj.cashed_out_amount:
-            tx_cashout = Transaction(
-                bankroll_id=bet_obj.bankroll_id,
-                bookmaker_id=bet_obj.bookmaker_id,
-                bet_id=bet_obj.id,
-                type="deposit",
-                amount=bet_obj.cashed_out_amount,
-                notes=f"Cashout for bet #{bet_obj.id}",
-            )
-            db.session.add(tx_cashout)
-
     if request.method == "POST":
         old_status = bet.status
         form_status = request.form.get("status")
+
+        # Bet fields
         bankroll_id = request.form.get("bankroll_id")
         bookmaker_id = request.form.get("bookmaker_id")
         bet.bankroll_id = int(bankroll_id) if bankroll_id else None
         bet.bookmaker_id = int(bookmaker_id) if bookmaker_id else None
+
         bet.sport = request.form.get("sport") or bet.sport
         bet.market_type = request.form.get("market_type") or bet.market_type
+
         new_total_odds = parse_float_field("total_odds")
         if new_total_odds is not None:
             bet.total_odds = new_total_odds
+
         new_stake = parse_float_field("stake")
         if new_stake is not None:
             bet.stake = new_stake
+
         new_potential_return = parse_float_field("potential_return")
         if new_potential_return is not None:
             bet.potential_return = new_potential_return
+
         bet.currency = request.form.get("currency") or bet.currency
         bet.notes = request.form.get("notes") or bet.notes
         bet.is_freebet = request.form.get('is_freebet') == '1'
         bet.is_live = request.form.get('is_live') == '1'
+
         placed_at_str = request.form.get("placed_at")
         if placed_at_str:
             try:
                 bet.placed_at = datetime.fromisoformat(placed_at_str)
             except ValueError:
                 pass
+
+        # ---- Status: trust manual selection from the form ----
         if form_status:
             bet.status = form_status
+
+        # Legs: status & builder flag
         legs = BetLeg.query.filter_by(bet_id=bet.id).all()
         for leg in legs:
             status_field = f"leg_status_{leg.id}"
             builder_field = f"leg_builder_{leg.id}"
+
             new_leg_status = request.form.get(status_field)
             if new_leg_status:
                 leg.status = new_leg_status
+
             leg.is_builder = builder_field in request.form
+
+        # If no manual status was provided, derive from legs
         if not form_status:
             has_lost = any(leg.status == "lost" for leg in legs)
             all_won = legs and all(leg.status == "won" for leg in legs)
+
             if bet.status not in ("cashed_out", "void"):
                 if has_lost:
                     bet.status = "lost"
@@ -1235,6 +1265,8 @@ def edit_bet(bet_id):
                     bet.status = "won"
                 else:
                     bet.status = "open"
+
+        # Recalculate total odds from legs that are not lost and have odds
         product = 1.0
         any_leg_odds = False
         for leg in legs:
@@ -1243,13 +1275,20 @@ def edit_bet(bet_id):
             if leg.odds_decimal is not None:
                 product *= float(leg.odds_decimal)
                 any_leg_odds = True
+
         if any_leg_odds:
             bet.total_odds = round(product, 3)
-        sync_bet_transactions(bet)
+
+        new_status = bet.status
+
+        # ---- Sincronizar transações e balance do bookmaker ----
+        sync_bet_transactions_and_balance(bet)
+
         db.session.commit()
         flash("Bet and legs updated", "success")
         return redirect(url_for("bets_list"))
 
+    # GET: load legs + lookup lists
     legs = BetLeg.query.filter_by(bet_id=bet.id).all()
     return render_template(
         "bet_detail.html",
@@ -1695,7 +1734,6 @@ def manage_funds(roll_id):
     current_streak = streak
     
     # ===== ESTATÍSTICAS POR BOOKMAKER =====
-    # SIMPLESMENTE USAR O CURRENT_BALANCE GUARDADO - NÃO RECALCULAR
     bookmaker_balances = {}
     for book in books:
         balance_record = BankrollBookmakerBalance.query.filter_by(
@@ -1704,10 +1742,8 @@ def manage_funds(roll_id):
         ).first()
         
         if balance_record:
-            # USAR O VALOR GUARDADO
             bookmaker_balances[book.id] = round(balance_record.current_balance, 2)
         else:
-            # Criar balance record se não existir
             new_balance = BankrollBookmakerBalance(
                 bankroll_id=roll.id,
                 bookmaker_id=book.id,
@@ -1765,7 +1801,7 @@ def manage_funds(roll_id):
                 sport_stats[key]["profit"] -= b.stake
         sport_stats[key]["count"] += 1
     
-    # Processar POST (depósito/levantamento)
+    # ===== PROCESSAR POST (depósito/levantamento) =====
     if request.method == "POST":
         tx_type = request.form.get("type")
         amount_raw = request.form.get("amount")
@@ -1810,9 +1846,23 @@ def manage_funds(roll_id):
         db.session.add(tx)
         db.session.commit()
         
-        # ===== ATUALIZAR O BALANCE DO BOOKMAKER =====
+        # ===== ATUALIZAR O BALANCE DO BOOKMAKER USANDO A NOVA FUNÇÃO =====
+        # Em vez de recalcular tudo, atualizar apenas a transação criada
         if bookmaker_id:
-            update_bookmaker_balance_from_transactions(roll.id, int(bookmaker_id))
+            balance_record = BankrollBookmakerBalance.query.filter_by(
+                bankroll_id=roll.id,
+                bookmaker_id=int(bookmaker_id)
+            ).first()
+            
+            if balance_record:
+                if tx_type == "deposit":
+                    balance_record.current_balance += amount
+                elif tx_type == "withdrawal":
+                    balance_record.current_balance -= amount
+                    if balance_record.current_balance < 0:
+                        balance_record.current_balance = 0.0
+                db.session.commit()
+                print(f"📊 Bookmaker balance atualizado: {balance_record.current_balance}")
         
         flash(f"{tx_type.capitalize()} of {amount} {roll.currency} recorded successfully!", "success")
         return redirect(url_for("manage_funds", roll_id=roll.id))
@@ -1878,65 +1928,6 @@ def manage_funds(roll_id):
         chart_labels=json.dumps(chart_labels),
         chart_data=json.dumps(chart_data),
     )
-
-def update_bookmaker_balance_from_transactions(bankroll_id, bookmaker_id):
-    """Atualiza o current_balance baseado nas transações (apenas quando há novas transações)"""
-    balance_record = BankrollBookmakerBalance.query.filter_by(
-        bankroll_id=bankroll_id,
-        bookmaker_id=bookmaker_id
-    ).first()
-    
-    if not balance_record:
-        balance_record = BankrollBookmakerBalance(
-            bankroll_id=bankroll_id,
-            bookmaker_id=bookmaker_id,
-            starting_balance=0.0,
-            current_balance=0.0
-        )
-        db.session.add(balance_record)
-        db.session.flush()
-    
-    roll = Bankroll.query.get(bankroll_id)
-    
-    deposits = sum(
-        tx.amount for tx in roll.transactions
-        if tx.bookmaker_id == bookmaker_id and tx.type == "deposit"
-    )
-    withdrawals = sum(
-        tx.amount for tx in roll.transactions
-        if tx.bookmaker_id == bookmaker_id and tx.type == "withdrawal"
-    )
-    
-    # Calcular impacto das apostas
-    bets = Bet.query.filter_by(
-        bookmaker_id=bookmaker_id,
-        bankroll_id=bankroll_id
-    ).all()
-    
-    bets_impact = 0.0
-    for bet in bets:
-        if bet.is_freebet:
-            if bet.status == "won" and bet.potential_return:
-                bets_impact += bet.potential_return
-            elif bet.status == "cashed_out" and bet.cashed_out_amount:
-                bets_impact += bet.cashed_out_amount
-        else:
-            if bet.status == "won" and bet.potential_return and bet.stake:
-                bets_impact += bet.potential_return - bet.stake
-            elif bet.status == "lost" and bet.stake:
-                bets_impact -= bet.stake
-            elif bet.status == "cashed_out" and bet.cashed_out_amount and bet.stake:
-                bets_impact += bet.cashed_out_amount - bet.stake
-    
-    current = balance_record.starting_balance + deposits - withdrawals + bets_impact
-    
-    if current < 0:
-        current = 0.0
-    
-    balance_record.current_balance = current
-    db.session.commit()
-    
-    return balance_record
 
 # app.py - Parte 7: Rotas de Bookmakers
 
@@ -2242,16 +2233,31 @@ def upload():
         total_odds = parsed.get("total_odds")
         potential_return = round(stake * total_odds, 2) if (stake and total_odds) else None
 
+        # ===== DATA/HORA - EXTRAIR DO EVENTO OU USAR ATUAL =====
         placed_at = parsed.get("placed_at")
+        
+        # Se a data for None ou for 00:00, tentar extrair do primeiro leg
+        if placed_at is None or (placed_at.hour == 0 and placed_at.minute == 0):
+            # Tentar extrair do primeiro leg
+            legs = parsed.get("legs") or []
+            for leg in legs:
+                event = leg.get("event")
+                if event:
+                    extracted = extract_datetime_from_event(event)
+                    if extracted:
+                        placed_at = extracted
+                        break
+        
+        # Se ainda não tiver data, usar agora
         if not placed_at:
             placed_at = datetime.utcnow()
-        else:
-            try:
-                if hasattr(placed_at, 'year') and (placed_at.year < 2020 or placed_at.year > 2030):
-                    placed_at = datetime.utcnow()
-            except AttributeError:
-                placed_at = datetime.utcnow()
+        
+        # Garantir que a data tem hora (se for 00:00, usar hora atual)
+        if placed_at.hour == 0 and placed_at.minute == 0:
+            now = datetime.utcnow()
+            placed_at = placed_at.replace(hour=now.hour, minute=now.minute, second=now.second)
 
+        # ===== CRIAR A APOSTA =====
         bet = Bet(
             id=get_next_bet_id(),
             bookmaker=raw_bookmaker_name,
@@ -2275,6 +2281,7 @@ def upload():
         db.session.add(bet)
         db.session.flush()
 
+        # ===== ADICIONAR LEGS =====
         legs = parsed.get("legs") or []
         for leg_data in legs:
             leg = BetLeg(
@@ -2285,6 +2292,75 @@ def upload():
                 odds_decimal=leg_data.get("odds_decimal"),
             )
             db.session.add(leg)
+
+        # ===== SE A APOSTA JÁ ESTIVER RESOLVIDA, CRIAR TRANSAÇÕES =====
+        if bet.status in ("won", "lost", "cashed_out") and bet.bankroll_id and bet.bookmaker_id and bet.stake:
+            # 1. TRANSAÇÃO DE STAKE (SAÍDA DO BANKROLL E DO BOOKMAKER)
+            if not bet.is_freebet:
+                # Saída do stake do bankroll
+                tx_stake = Transaction(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id,
+                    bet_id=bet.id,
+                    type="withdrawal",
+                    amount=bet.stake,
+                    notes=f"Stake for bet #{bet.id}"
+                )
+                db.session.add(tx_stake)
+                
+                # ATUALIZAR BALANCE DO BOOKMAKER (diminuir o stake)
+                balance_record = BankrollBookmakerBalance.query.filter_by(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id
+                ).first()
+                if balance_record:
+                    balance_record.current_balance -= bet.stake
+                    if balance_record.current_balance < 0:
+                        balance_record.current_balance = 0.0
+                    print(f"📊 Bookmaker balance atualizado: {balance_record.current_balance}")
+
+            # 2. TRANSAÇÃO DE RETORNO (ENTRADA NO BANKROLL E NO BOOKMAKER)
+            if bet.status == "won" and bet.potential_return:
+                # Entrada do prémio no bankroll
+                tx_payout = Transaction(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id,
+                    bet_id=bet.id,
+                    type="deposit",
+                    amount=bet.potential_return,
+                    notes=f"Payout for bet #{bet.id}"
+                )
+                db.session.add(tx_payout)
+                
+                # ATUALIZAR BALANCE DO BOOKMAKER (aumentar com o prémio)
+                balance_record = BankrollBookmakerBalance.query.filter_by(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id
+                ).first()
+                if balance_record:
+                    balance_record.current_balance += bet.potential_return
+                    print(f"📊 Bookmaker balance atualizado: {balance_record.current_balance}")
+                    
+            elif bet.status == "cashed_out" and bet.cashed_out_amount:
+                # Entrada do cashout no bankroll
+                tx_cashout = Transaction(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id,
+                    bet_id=bet.id,
+                    type="deposit",
+                    amount=bet.cashed_out_amount,
+                    notes=f"Cashout for bet #{bet.id}"
+                )
+                db.session.add(tx_cashout)
+                
+                # ATUALIZAR BALANCE DO BOOKMAKER (aumentar com o cashout)
+                balance_record = BankrollBookmakerBalance.query.filter_by(
+                    bankroll_id=bet.bankroll_id,
+                    bookmaker_id=bet.bookmaker_id
+                ).first()
+                if balance_record:
+                    balance_record.current_balance += bet.cashed_out_amount
+                    print(f"📊 Bookmaker balance atualizado: {balance_record.current_balance}")
 
         db.session.commit()
         flash(f"✅ Bet #{bet.id} uploaded! Bookmaker: {raw_bookmaker_name or 'AI detected'}, Freebet: {is_freebet}", "success")
@@ -3645,6 +3721,72 @@ with app.app_context():
     print("\n📋 Utilizadores existentes:")
     for u in User.query.all():
         print(f"   - {u.username} (ID: {u.id})")
+        
+def extract_datetime_from_event(event_text: str):
+    """Extrai data e hora do texto de um evento."""
+    import re
+    from datetime import datetime
+    
+    if not event_text:
+        return None
+    
+    current_year = datetime.utcnow().year
+    
+    patterns = [
+        r'(\d{2}/\d{2}/\d{4})\s+(\d{2}:\d{2})',
+        r'(\d{2}/\d{2}/\d{4})\s*[-–]\s*(\d{2}:\d{2})',
+        r'(\d{2}/\d{2}/\d{2})\s+(\d{2}:\d{2})',
+        r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})',
+        r'(\d{2}/\d{2}/\d{4})',
+        r'(\d{4}-\d{2}-\d{2})',
+        r'(\d{2}:\d{2})',
+    ]
+    
+    date_str = None
+    time_str = None
+    
+    for pattern in patterns:
+        match = re.search(pattern, event_text)
+        if match:
+            if len(match.groups()) == 2:
+                date_str, time_str = match.groups()
+                break
+            elif len(match.groups()) == 1:
+                if '/' in match.group(1) or '-' in match.group(1):
+                    date_str = match.group(1)
+                elif ':' in match.group(1):
+                    time_str = match.group(1)
+    
+    if not date_str and not time_str:
+        return None
+    
+    dt = None
+    if date_str:
+        for fmt in ['%d/%m/%Y', '%Y-%m-%d', '%d/%m/%y']:
+            try:
+                dt = datetime.strptime(date_str, fmt)
+                break
+            except ValueError:
+                continue
+    
+    if dt is None and time_str:
+        dt = datetime.now()
+    
+    if dt and time_str:
+        try:
+            hour, minute = map(int, time_str.split(':'))
+            dt = dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        except:
+            pass
+    
+    if dt and (dt.year < 2020 or dt.year > 2030):
+        try:
+            dt = dt.replace(year=current_year)
+        except:
+            dt = None
+    
+    return dt
+        
 
 # ===== INICIALIZAÇÃO DA APP =====
 if __name__ == "__main__":

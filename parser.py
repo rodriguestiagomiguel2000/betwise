@@ -19,84 +19,57 @@ def parse_betslip_from_gemini(data: Dict[str, Any]) -> Dict[str, Any]:
     out["status"] = data.get("status")
     out["bet_id"] = data.get("bet_id")
 
-    # placed_at: ISO string -> datetime
+    # ===== EXTRAIR DATA/HORA DO PRIMEIRO EVENTO =====
+    legs_in: List[Dict[str, Any]] = data.get("legs") or []
+    legs_out: List[Dict[str, Any]] = []
+    
+    # Data/hora extraída do primeiro evento
+    extracted_datetime = None
+    
+    for leg in legs_in:
+        leg_data = {
+            "event": leg.get("event"),
+            "team": leg.get("team"),
+            "market": leg.get("market"),
+            "odds_decimal": leg.get("odds_decimal"),
+        }
+        legs_out.append(leg_data)
+        
+        # Tentar extrair data/hora do evento (se ainda não foi extraída)
+        if extracted_datetime is None and leg.get("event"):
+            extracted_datetime = extract_datetime_from_event(leg.get("event"))
+    
+    out["legs"] = legs_out
+
+    # ===== PROCESSAR placed_at =====
     placed_raw = data.get("placed_at")
     current_year = datetime.utcnow().year
     
-    if placed_raw:
+    # Tentar usar a data/hora extraída do evento
+    if extracted_datetime:
+        out["placed_at"] = extracted_datetime
+    elif placed_raw:
+        # Tentar fazer parse da data do Gemini
         try:
-            # Tentar fazer parse da data
             dt = None
-            
-            # Tentar diferentes formatos
-            # Formato completo: YYYY-MM-DDTHH:MM:SS
-            try:
-                dt = datetime.fromisoformat(placed_raw)
-            except ValueError:
-                pass
-            
-            # Se falhou, tentar apenas data: YYYY-MM-DD
-            if not dt:
+            for fmt in ['%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d/%m/%Y', '%d/%m/%y']:
                 try:
-                    dt = datetime.strptime(placed_raw.split('T')[0], '%Y-%m-%d')
+                    dt = datetime.strptime(placed_raw, fmt)
+                    break
                 except ValueError:
-                    pass
-            
-            # Se ainda falhou, tentar DD/MM/YYYY ou DD/MM/YY
-            if not dt:
-                for fmt in ['%d/%m/%Y', '%d/%m/%y', '%d-%m-%Y', '%d-%m-%y']:
-                    try:
-                        dt = datetime.strptime(placed_raw, fmt)
-                        break
-                    except ValueError:
-                        continue
-            
-            # Se falhou tudo, tentar extrair apenas dia e mês
-            if not dt:
-                import re
-                # Procurar padrão DD/MM ou DD-MM
-                match = re.search(r'(\d{1,2})[/-](\d{1,2})', placed_raw)
-                if match:
-                    day = int(match.group(1))
-                    month = int(match.group(2))
-                    # Usar ano atual
-                    try:
-                        dt = datetime(current_year, month, day)
-                    except ValueError:
-                        dt = None
+                    continue
             
             if dt:
-                # Verificar se a data é razoável (entre 2020 e 2030)
+                # Verificar se a data é razoável
                 if dt.year < 2020 or dt.year > 2030:
-                    # Se for uma data muito antiga ou futura, usar ano atual
-                    try:
-                        dt = datetime(current_year, dt.month, dt.day)
-                    except ValueError:
-                        dt = None
-            
-            out["placed_at"] = dt
-            
-        except Exception as e:
-            print(f"DEBUG: Error parsing date '{placed_raw}': {e}")
+                    dt = datetime(current_year, dt.month, dt.day) if dt.month else None
+                out["placed_at"] = dt
+            else:
+                out["placed_at"] = None
+        except Exception:
             out["placed_at"] = None
     else:
         out["placed_at"] = None
-
-    # Legs
-    legs_in: List[Dict[str, Any]] = data.get("legs") or []
-    legs_out: List[Dict[str, Any]] = []
-
-    for leg in legs_in:
-        legs_out.append(
-            {
-                "event": leg.get("event"),
-                "team": leg.get("team"),
-                "market": leg.get("market"),
-                "odds_decimal": leg.get("odds_decimal"),
-            }
-        )
-
-    out["legs"] = legs_out
 
     # total_odds
     total_odds: Optional[float] = None
@@ -116,3 +89,9 @@ def parse_betslip_from_gemini(data: Dict[str, Any]) -> Dict[str, Any]:
     out["total_odds"] = total_odds
 
     return out
+
+
+def extract_datetime_from_event(event_text: str) -> Optional[datetime]:
+    """Extrai data e hora do texto de um evento."""
+    if not event_text:
+        return None
