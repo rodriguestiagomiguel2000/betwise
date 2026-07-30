@@ -3,61 +3,76 @@
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Filtros -->
-<div class="dashboard-header">
-  <div>
-    <h1 class="page-title">{{ APP_NAME }} Dashboard</h1>
-    <p class="page-subtitle">Summary of your activity</p>
+<!-- ===== STICKY FILTER BAR ===== -->
+<div class="sticky-filter-bar">
+  <form method="get" action="{{ url_for('stats') }}" class="filter-form">
+    <select name="period" class="select-metrika" onchange="this.form.submit()">
+      <option value="all" {% if selected_period == 'all' %}selected{% endif %}>All time</option>
+      <option value="7d" {% if selected_period == '7d' %}selected{% endif %}>Last 7 days</option>
+      <option value="30d" {% if selected_period == '30d' %}selected{% endif %}>Last 30 days</option>
+      <option value="this_month" {% if selected_period == 'this_month' %}selected{% endif %}>This month</option>
+      <option value="this_year" {% if selected_period == 'this_year' %}selected{% endif %}>This year</option>
+    </select>
+    <select name="bankroll_id" class="select-metrika" onchange="this.form.submit()">
+      <option value="">All Bankrolls</option>
+      {% for b in all_bankrolls %}
+      <option value="{{ b.id }}" {% if selected_bankroll == b.id|string %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="sport" class="select-metrika" onchange="this.form.submit()">
+      <option value="">All Sports</option>
+      {% for sport in all_sports %}
+      <option value="{{ sport }}" {% if selected_sport == sport %}selected{% endif %}>{{ sport }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- ===== HERO KPI GRID ===== -->
+<div class="hero-kpi-grid">
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon">🏦</div>
+      <span class="hero-kpi-trend">Balance</span>
+    </div>
+    <div class="hero-kpi-value">{{ "%.2f"|format(total_balance) }}€</div>
+    <div class="hero-kpi-label">Total Bankroll</div>
   </div>
-  <div class="header-actions">
-    <form method="get" action="{{ url_for('stats') }}" class="filter-form">
-      <select name="period" class="select-metrika" onchange="this.form.submit()">
-        <option value="all" {% if selected_period == 'all' %}selected{% endif %}>All time</option>
-        <option value="7d" {% if selected_period == '7d' %}selected{% endif %}>Last 7 days</option>
-        <option value="30d" {% if selected_period == '30d' %}selected{% endif %}>Last 30 days</option>
-        <option value="this_month" {% if selected_period == 'this_month' %}selected{% endif %}>This month</option>
-        <option value="this_year" {% if selected_period == 'this_year' %}selected{% endif %}>This year</option>
-      </select>
-      <select name="bankroll_id" class="select-metrika" onchange="this.form.submit()">
-        <option value="">All Bankrolls</option>
-        {% for b in all_bankrolls %}
-        <option value="{{ b.id }}" {% if selected_bankroll == b.id|string %}selected{% endif %}>{{ b.name }}</option>
-        {% endfor %}
-      </select>
-      <select name="sport" class="select-metrika" onchange="this.form.submit()">
-        <option value="">All Sports</option>
-        {% for sport in all_sports %}
-        <option value="{{ sport }}" {% if selected_sport == sport %}selected{% endif %}>{{ sport }}</option>
-        {% endfor %}
-      </select>
-    </form>
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon {% if roi >= 0 %}pos{% else %}neg{% endif %}">%</div>
+      <span class="hero-kpi-trend {% if roi < 0 %}neg{% endif %}">{% if roi >= 0 %}▲{% else %}▼{% endif %} ROI</span>
+    </div>
+    <div class="hero-kpi-value {% if roi >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.1f"|format(roi) }}%</div>
+    <div class="hero-kpi-label">Return on Investment</div>
+  </div>
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon pos">🎯</div>
+      <span class="hero-kpi-trend">Win Rate</span>
+    </div>
+    <div class="hero-kpi-value">{{ "%.1f"|format(win_rate) }}%</div>
+    <div class="hero-kpi-label">Win Rate</div>
+  </div>
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon {% if total_profit >= 0 %}pos{% else %}neg{% endif %}">📉</div>
+      <span class="hero-kpi-trend {% if total_profit < 0 %}neg{% endif %}">{% if total_profit >= 0 %}Profit{% else %}Loss{% endif %}</span>
+    </div>
+    <div class="hero-kpi-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.2f"|format(total_profit) }}€</div>
+    <div class="hero-kpi-label">Net Profit</div>
   </div>
 </div>
 
-<!-- KPIs Grid (8 cards) -->
+<!-- ===== SECONDARY KPIs (compact strip) ===== -->
 <div class="kpi-grid">
-  <div class="kpi-card">
-    <span class="kpi-icon">🎯</span>
-    <div class="kpi-value">{{ "%.1f"|format(win_rate) }}%</div>
-    <div class="kpi-label">Win Rate</div>
-  </div>
-  <div class="kpi-card">
-    <span class="kpi-icon">%</span>
-    <div class="kpi-value {% if roi >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.1f"|format(roi) }}%</div>
-    <div class="kpi-label">ROI</div>
-  </div>
   <div class="kpi-card">
     <span class="kpi-icon">📊</span>
     <div class="kpi-value">{{ "%.2f"|format(avg_odds) }}</div>
     <div class="kpi-label">Avg Odds</div>
   </div>
   <div class="kpi-card">
-    <span class="kpi-icon">📉</span>
-    <div class="kpi-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.2f"|format(total_profit) }}€</div>
-    <div class="kpi-label">Profit</div>
-  </div>
-  <div class="kpi-card">
-    <span class="kpi-icon">📉</span>
+    <span class="kpi-icon" style="color: var(--accent-orange);">📉</span>
     <div class="kpi-value" style="color: var(--accent-orange);">{{ drawdown }}€</div>
     <div class="kpi-label">Drawdown</div>
   </div>
@@ -71,14 +86,9 @@
     <div class="kpi-value">{{ "%.2f"|format(total_staked) }}€</div>
     <div class="kpi-label">Total Staked</div>
   </div>
-  <div class="kpi-card">
-    <span class="kpi-icon">🏦</span>
-    <div class="kpi-value">{{ "%.2f"|format(total_balance) }}€</div>
-    <div class="kpi-label">Balance</div>
-  </div>
 </div>
 
-<!-- Insights Cards -->
+<!-- ===== INSIGHTS CARDS ===== -->
 <div class="insights-grid">
   <div class="insight-card">
     <div class="insight-icon">🏆</div>
@@ -110,135 +120,186 @@
   </div>
 </div>
 
-<!-- Linha do Meio: Gráfico + Performance -->
-<div class="dashboard-row-2">
-  <div class="card-metrika chart-container-card">
-    <div class="card-title-bar">
-      <h3>Profit Evolution</h3>
+<!-- ===== MAIN GRID: Chart (70%) + Side Panel (30%) ===== -->
+<div class="dash-main-grid">
+  <!-- MAIN COLUMN -->
+  <div>
+    <!-- Profit Evolution Chart -->
+    <div class="card-metrika chart-container-card">
+      <div class="card-title-bar">
+        <h3>Profit Evolution</h3>
+      </div>
+      <div style="height: 260px; width: 100%;">
+        <canvas id="metrikaChart" data-labels="{{ chart_labels }}" data-data="{{ chart_data }}"></canvas>
+      </div>
     </div>
-    <div style="height: 220px; width: 100%;">
-      <canvas id="metrikaChart" data-labels="{{ chart_labels }}" data-data="{{ chart_data }}"></canvas>
+
+    <!-- Distribution Charts Row -->
+    <div class="dashboard-row-2" style="margin-top: 1.25rem;">
+      <div class="card-metrika">
+        <div class="card-title-bar">
+          <h3>Odds Distribution</h3>
+        </div>
+        <div style="height: 200px; width: 100%;">
+          <canvas id="oddsChart" data-odds="{{ odds_distribution }}"></canvas>
+        </div>
+      </div>
+
+      <div class="card-metrika">
+        <div class="card-title-bar">
+          <h3>Win Rate by Odds</h3>
+        </div>
+        <div style="height: 200px; width: 100%;">
+          <canvas id="oddsWinRateChart" data-winrate="{{ odds_win_rate|tojson|safe }}"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Bets -->
+    <div class="card-metrika" style="margin-top: 1.25rem;">
+      <div class="card-title-bar">
+        <h3>Recent bets</h3>
+        <a href="{{ url_for('bets_list') }}" class="link-green">View all →</a>
+      </div>
+      <div class="recent-bets-list" style="max-height: 340px; overflow-y: auto; padding-right: 0.5rem;">
+        {% for b in bets[:5] %}
+        <div class="bet-item-card">
+          <div class="bet-item-header">
+            <span class="bet-title">#{{ b.id }} - {{ b.sport or 'Aposta Geral' }}</span>
+            <span class="bet-date">{{ b.placed_at.strftime('%d/%m/%Y %H:%M') if b.placed_at else 'N/A' }}</span>
+          </div>
+          <div class="bet-item-details">
+            <span>Odds <strong>{{ b.total_odds }}</strong></span>
+            <span>Stake <strong>{{ b.stake }}€</strong></span>
+            <span class="{% if b.status == 'won' %}text-positive{% elif b.status == 'lost' %}text-negative{% else %}text-muted{% endif %} font-bold">
+              {% if b.status == 'won' %}+{{ (b.potential_return - b.stake)|round(2) }}€
+              {% elif b.status == 'lost' %}-{{ b.stake }}€
+              {% elif b.status == 'cashed_out' %}{{ (b.cashed_out_amount - b.stake)|round(2) }}€
+              {% else %}--{% endif %}
+            </span>
+          </div>
+          <div class="bet-item-tags">
+            <span class="tag tag-purple">{{ b.market_type or 'Single' }}</span>
+            <span class="tag tag-green">{{ b.sport or 'General' }}</span>
+            {% if b.is_freebet %}
+            <span class="tag tag-freebet">🎁 Free</span>
+            {% endif %}
+            {% if b.is_live %}
+            <span class="tag tag-live">⚡ Live</span>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <p style="color: #64748b; font-size: 0.85rem; padding: 1rem 0; text-align: center;">No bets found.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Bookmaker Performance Table -->
+    <div class="card-metrika" style="margin-top: 1.25rem;">
+      <div class="card-title-bar">
+        <h3>Performance by Bookmaker</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table-metrika">
+          <thead>
+            <tr>
+              <th>Bookmaker</th>
+              <th>Bets</th>
+              <th>Staked</th>
+              <th>Profit</th>
+              <th>ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for book, book_data in book_stats.items() %}
+            <tr>
+              <td><strong>{{ book }}</strong></td>
+              <td>{{ book_data.count }}</td>
+              <td>{{ "%.2f"|format(book_data.staked) }}€</td>
+              <td class="{% if book_data.profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.2f"|format(book_data.profit) }}€</td>
+              <td class="{% if (book_data.profit / book_data.staked * 100) >= 0 %}text-positive{% else %}text-negative{% endif %}">
+                {{ "%.1f"|format((book_data.profit / book_data.staked * 100) if book_data.staked > 0 else 0) }}%
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center; color: var(--text-muted); padding: 2rem;">No data available.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="card-metrika performance-card">
-    <div class="card-title-bar">
-      <h3>Performance</h3>
-    </div>
-    <div class="performance-body">
-      <div class="donut-placeholder">
-        <div class="donut-val">{{ "%.1f"|format(win_rate) }}%</div>
+  <!-- SIDE PANEL (30%) -->
+  <div class="dash-side-panel">
+    <!-- Performance Donut -->
+    <div class="side-card">
+      <div class="side-card-title">Performance</div>
+      <div class="performance-body">
+        <div class="donut-placeholder">
+          <div class="donut-val">{{ "%.1f"|format(win_rate) }}%</div>
+        </div>
+        <div class="perf-stats">
+          {% set won_count = bets|selectattr('status', 'equalto', 'won')|list|length %}
+          {% set lost_count = bets|selectattr('status', 'equalto', 'lost')|list|length %}
+          {% set open_count = bets|selectattr('status', 'equalto', 'open')|list|length %}
+          {% set cashed_count = bets|selectattr('status', 'equalto', 'cashed_out')|list|length %}
+          <div><strong class="text-positive">{{ won_count }}</strong><span>Won</span></div>
+          <div><strong class="text-negative">{{ lost_count }}</strong><span>Lost</span></div>
+          <div><strong style="color: #94a3b8;">{{ open_count }}</strong><span>Pending</span></div>
+          <div><strong style="color: var(--accent-orange);">{{ cashed_count }}</strong><span>Cashout</span></div>
+          <div><strong>{{ best_streak }}</strong><span>Best Streak</span></div>
+          <div><strong style="color: var(--accent-red);">{{ worst_streak }}</strong><span>Worst Streak</span></div>
+        </div>
       </div>
-      <div class="perf-stats">
-        {% set won_count = bets|selectattr('status', 'equalto', 'won')|list|length %}
-        {% set lost_count = bets|selectattr('status', 'equalto', 'lost')|list|length %}
-        {% set open_count = bets|selectattr('status', 'equalto', 'open')|list|length %}
-        {% set cashed_count = bets|selectattr('status', 'equalto', 'cashed_out')|list|length %}
-        <div><strong class="text-positive">{{ won_count }}</strong><span>Won</span></div>
-        <div><strong class="text-negative">{{ lost_count }}</strong><span>Lost</span></div>
-        <div><strong style="color: #94a3b8;">{{ open_count }}</strong><span>Pending</span></div>
-        <div><strong style="color: var(--accent-orange);">{{ cashed_count }}</strong><span>Cashout</span></div>
-        <div><strong>{{ best_streak }}</strong><span>Best Streak</span></div>
-        <div><strong style="color: var(--accent-red);">{{ worst_streak }}</strong><span>Worst Streak</span></div>
-      </div>
     </div>
-  </div>
-</div>
 
-<!-- Gráficos de Distribuição + Win Rate por Odds -->
-<div class="dashboard-row-2" style="margin-top: 1.25rem;">
-  <div class="card-metrika">
-    <div class="card-title-bar">
-      <h3>Odds Distribution</h3>
-    </div>
-    <div style="height: 180px; width: 100%;">
-      <canvas id="oddsChart" data-odds="{{ odds_distribution }}"></canvas>
-    </div>
-  </div>
-
-  <div class="card-metrika">
-    <div class="card-title-bar">
-      <h3>Win Rate by Odds</h3>
-    </div>
-    <div style="height: 180px; width: 100%;">
-      <canvas id="oddsWinRateChart" data-winrate="{{ odds_win_rate|tojson|safe }}"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- Recent Bets -->
-<div class="card-metrika">
-  <div class="card-title-bar">
-    <h3>Recent bets</h3>
-    <a href="{{ url_for('bets_list') }}" class="link-green">View all →</a>
-  </div>
-  <div class="recent-bets-list" style="max-height: 300px; overflow-y: auto; padding-right: 0.5rem;">
-    {% for b in bets[:5] %}
-    <div class="bet-item-card">
-      <div class="bet-item-header">
-        <span class="bet-title">#{{ b.id }} - {{ b.sport or 'Aposta Geral' }}</span>
-        <span class="bet-date">{{ b.placed_at.strftime('%d/%m/%Y %H:%M') if b.placed_at else 'N/A' }}</span>
-      </div>
-      <div class="bet-item-details">
-        <span>Odds <strong>{{ b.total_odds }}</strong></span>
-        <span>Stake <strong>{{ b.stake }}€</strong></span>
-        <span class="{% if b.status == 'won' %}text-positive{% elif b.status == 'lost' %}text-negative{% else %}text-muted{% endif %} font-bold">
-          {% if b.status == 'won' %}+{{ (b.potential_return - b.stake)|round(2) }}€
-          {% elif b.status == 'lost' %}-{{ b.stake }}€
-          {% elif b.status == 'cashed_out' %}{{ (b.cashed_out_amount - b.stake)|round(2) }}€
-          {% else %}--{% endif %}
-        </span>
-      </div>
-      <div class="bet-item-tags">
-        <span class="tag tag-purple">{{ b.market_type or 'Single' }}</span>
-        <span class="tag tag-green">{{ b.sport or 'General' }}</span>
-        {% if b.is_freebet %}
-        <span class="tag tag-freebet">🎁 Free</span>
-        {% endif %}
-        {% if b.is_live %}
-        <span class="tag tag-live">⚡ Live</span>
-        {% endif %}
+    <!-- Quick Actions -->
+    <div class="side-card">
+      <div class="side-card-title">Quick Actions</div>
+      <div class="quick-actions">
+        <a href="{{ url_for('upload') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📸</span>
+          <span>Upload Bet</span>
+        </a>
+        <a href="{{ url_for('bets_list') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📋</span>
+          <span>All Bets</span>
+        </a>
+        <a href="{{ url_for('bankrolls_list') }}" class="quick-action-btn">
+          <span class="quick-action-icon">💼</span>
+          <span>Bankrolls</span>
+        </a>
+        <a href="{{ url_for('export') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📤</span>
+          <span>Export</span>
+        </a>
       </div>
     </div>
-    {% else %}
-    <p style="color: #64748b; font-size: 0.85rem; padding: 1rem 0; text-align: center;">No bets found.</p>
-    {% endfor %}
-  </div>
-</div>
 
-<!-- Tabela de Bookmakers -->
-<div class="card-metrika">
-  <div class="card-title-bar">
-    <h3>Performance by Bookmaker</h3>
+    <!-- Sport Progress -->
+    <div class="side-card">
+      <div class="side-card-title">Top Sports</div>
+      <div class="sport-progress-list">
+        {% for sport, sport_data in sport_stats.items()[:5] %}
+        <div class="sport-row">
+          <div class="sport-info">
+            <span>{{ sport }}</span>
+            <span class="{% if sport_data.profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.0f"|format(sport_data.profit) }}€</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" data-width="{{ (sport_data.count / total_bets_count * 100) if total_bets_count > 0 else 0 }}"></div>
+          </div>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.82rem; text-align: center; padding: 1rem 0;">No sport data yet.</p>
+        {% endfor %}
+      </div>
+    </div>
   </div>
-  <table class="table-metrika">
-    <thead>
-      <tr>
-        <th>Bookmaker</th>
-        <th>Bets</th>
-        <th>Staked</th>
-        <th>Profit</th>
-        <th>ROI</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for book, book_data in book_stats.items() %}
-      <tr>
-        <td><strong>{{ book }}</strong></td>
-        <td>{{ book_data.count }}</td>
-        <td>{{ "%.2f"|format(book_data.staked) }}€</td>
-        <td class="{% if book_data.profit >= 0 %}text-positive{% else %}text-negative{% endif %}">{{ "%.2f"|format(book_data.profit) }}€</td>
-        <td class="{% if (book_data.profit / book_data.staked * 100) >= 0 %}text-positive{% else %}text-negative{% endif %}">
-          {{ "%.1f"|format((book_data.profit / book_data.staked * 100) if book_data.staked > 0 else 0) }}%
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="5" style="text-align:center; color: var(--text-muted); padding: 2rem;">No data available.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
 
 <script>
@@ -262,19 +323,19 @@
           datasets: [{
             label: 'Profit Evolution',
             data: chartData,
-            borderColor: '#10b981',
-            borderWidth: 2,
+            borderColor: '#2b7fff',
+            borderWidth: 2.5,
             pointRadius: 3,
-            pointBackgroundColor: '#10b981',
-            pointBorderColor: '#10b981',
+            pointBackgroundColor: '#2b7fff',
+            pointBorderColor: '#2b7fff',
             pointHoverRadius: 6,
             tension: 0.4,
             fill: true,
             backgroundColor: function(context) {
               var ctx2 = context.chart.ctx;
-              var gradient = ctx2.createLinearGradient(0, 0, 0, 200);
-              gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-              gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+              var gradient = ctx2.createLinearGradient(0, 0, 0, 220);
+              gradient.addColorStop(0, 'rgba(43, 127, 255, 0.22)');
+              gradient.addColorStop(1, 'rgba(43, 127, 255, 0)');
               return gradient;
             }
           }]
@@ -285,13 +346,13 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(20, 21, 24, 0.9)',
-              titleColor: '#f1f5f9',
-              bodyColor: '#f1f5f9',
-              borderColor: '#22252a',
+              backgroundColor: 'rgba(14, 20, 34, 0.95)',
+              titleColor: '#eaf1fb',
+              bodyColor: '#eaf1fb',
+              borderColor: '#1e2a44',
               borderWidth: 1,
-              padding: 10,
-              cornerRadius: 6,
+              padding: 12,
+              cornerRadius: 10,
               callbacks: {
                 label: function(context) {
                   return 'Profit: ' + context.parsed.y.toFixed(2) + '€';
@@ -305,12 +366,12 @@
           scales: {
             x: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
-              ticks: { color: '#64748b' } 
+              ticks: { color: '#7d8ba8' } 
             },
             y: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
               ticks: { 
-                color: '#64748b',
+                color: '#7d8ba8',
                 callback: function(value) {
                   return value.toFixed(0) + '€';
                 }
@@ -334,9 +395,10 @@
           datasets: [{
             label: 'Bets',
             data: Object.values(oddsData),
-            backgroundColor: 'rgba(16, 185, 129, 0.6)',
-            borderColor: '#10b981',
-            borderWidth: 1
+            backgroundColor: 'rgba(43, 127, 255, 0.55)',
+            borderColor: '#2b7fff',
+            borderWidth: 1,
+            borderRadius: 6
           }]
         },
         options: {
@@ -345,13 +407,13 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(20, 21, 24, 0.9)',
-              titleColor: '#f1f5f9',
-              bodyColor: '#f1f5f9',
-              borderColor: '#22252a',
+              backgroundColor: 'rgba(14, 20, 34, 0.95)',
+              titleColor: '#eaf1fb',
+              bodyColor: '#eaf1fb',
+              borderColor: '#1e2a44',
               borderWidth: 1,
               padding: 10,
-              cornerRadius: 6,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   return context.parsed.y + ' bets';
@@ -362,12 +424,12 @@
           scales: {
             x: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
-              ticks: { color: '#64748b' } 
+              ticks: { color: '#7d8ba8' } 
             },
             y: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
               ticks: { 
-                color: '#64748b',
+                color: '#7d8ba8',
                 stepSize: 1
               } 
             }
@@ -395,9 +457,10 @@
           datasets: [{
             label: 'Win Rate %',
             data: winRates,
-            backgroundColor: 'rgba(99, 102, 241, 0.6)',
-            borderColor: '#818cf8',
-            borderWidth: 1
+            backgroundColor: 'rgba(31, 214, 166, 0.55)',
+            borderColor: '#1fd6a6',
+            borderWidth: 1,
+            borderRadius: 6
           }]
         },
         options: {
@@ -406,13 +469,13 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(20, 21, 24, 0.9)',
-              titleColor: '#f1f5f9',
-              bodyColor: '#f1f5f9',
-              borderColor: '#22252a',
+              backgroundColor: 'rgba(14, 20, 34, 0.95)',
+              titleColor: '#eaf1fb',
+              bodyColor: '#eaf1fb',
+              borderColor: '#1e2a44',
               borderWidth: 1,
               padding: 10,
-              cornerRadius: 6,
+              cornerRadius: 8,
               callbacks: {
                 label: function(context) {
                   var key = labels[context.dataIndex];
@@ -425,12 +488,12 @@
           scales: {
             x: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
-              ticks: { color: '#64748b' } 
+              ticks: { color: '#7d8ba8' } 
             },
             y: { 
               grid: { color: 'rgba(255,255,255,0.03)' }, 
               ticks: { 
-                color: '#64748b',
+                color: '#7d8ba8',
                 callback: function(value) {
                   return value.toFixed(0) + '%';
                 }
@@ -567,11 +630,12 @@
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  border: 10px solid var(--accent-green);
+  border: 10px solid var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 0 24px var(--accent-glow);
 }
 
 .donut-val {
@@ -658,23 +722,23 @@
 }
 
 .tag-purple {
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(155, 140, 255, 0.15);
   color: var(--accent-purple);
 }
 
 .tag-green {
-  background: rgba(34, 197, 94, 0.15);
+  background: rgba(31, 214, 166, 0.15);
   color: var(--accent-green);
 }
 
 .tag-freebet {
-  background: rgba(234, 179, 8, 0.15);
+  background: rgba(255, 181, 71, 0.15);
   color: var(--accent-yellow);
 }
 
 .tag-live {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
+  background: rgba(43, 127, 255, 0.15);
+  color: var(--accent-blue);
 }
 
 /* Table */
@@ -698,7 +762,7 @@
 }
 
 .link-green {
-  color: var(--accent-green);
+  color: var(--accent);
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
@@ -725,6 +789,22 @@
 
 .recent-bets-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .hero-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 0.6rem !important; }
+  .hero-kpi { padding: 0.85rem 0.7rem !important; border-radius: var(--radius-sm) !important; }
+  .hero-kpi-value { font-size: 1.25rem !important; }
+  .hero-kpi-icon { width: 32px !important; height: 32px !important; font-size: 1rem !important; }
+  .hero-kpi-label { font-size: 0.56rem !important; }
+  .hero-kpi-trend { font-size: 0.6rem !important; padding: 0.15rem 0.45rem !important; }
+  .sticky-filter-bar { top: 60px !important; padding: 0.6rem 0.7rem !important; border-radius: var(--radius-sm) !important; }
+  .sticky-filter-bar .select-metrika { font-size: 0.6rem !important; padding: 0.35rem 0.5rem !important; min-width: 0 !important; }
+  .dash-main-grid { grid-template-columns: 1fr !important; gap: 0.85rem !important; }
+  .dash-side-panel { position: static !important; }
+  .quick-actions { grid-template-columns: 1fr 1fr 1fr 1fr !important; }
+  .quick-action-btn { padding: 0.55rem 0.3rem !important; font-size: 0.58rem !important; }
+  .quick-action-icon { font-size: 1rem !important; }
 }
 </style>
 {% endblock %}

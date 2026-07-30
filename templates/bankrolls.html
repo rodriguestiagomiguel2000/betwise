@@ -1,177 +1,244 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Cabeçalho com estatísticas -->
+<!-- ===== PAGE HEADER ===== -->
 <div class="bankroll-header">
   <div>
     <h1 class="page-title">My Bankrolls</h1>
-    <p class="page-subtitle">Manage your betting funds</p>
+    <p class="page-subtitle">Manage your betting funds and track performance</p>
   </div>
   <div style="display: flex; gap: 0.75rem;">
-    <a href="{{ url_for('bankrolls_list') }}" class="btn btn-primary">+ Create bankroll</a>
+    <a href="#createBankrollForm" class="btn btn-primary">+ Create bankroll</a>
   </div>
 </div>
 
-<!-- Cards de estatísticas totais -->
-<div class="bankroll-stats-grid">
-  <div class="stat-card">
-    <div class="stat-label">TOTAL BALANCE</div>
-    <div class="stat-value">{{ "%.2f"|format(total_balance) }}€</div>
+<!-- ===== HERO STATS GRID ===== -->
+<div class="bankroll-hero-grid">
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon">🏦</div>
+      <span class="hero-kpi-trend">Total</span>
+    </div>
+    <div class="hero-kpi-value">{{ "%.2f"|format(total_balance) }}€</div>
+    <div class="hero-kpi-label">Total Balance</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">TOTAL PROFIT</div>
-    <div class="stat-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon {% if total_profit >= 0 %}pos{% else %}neg{% endif %}">📈</div>
+      <span class="hero-kpi-trend {% if total_profit < 0 %}neg{% endif %}">{% if total_profit >= 0 %}Profit{% else %}Loss{% endif %}</span>
+    </div>
+    <div class="hero-kpi-value {% if total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
       {{ "%.2f"|format(total_profit) }}€
-      <span style="font-size: 0.75rem; opacity: 0.6;">
-        ({{ "%.1f"|format((total_profit / total_invested * 100) if total_invested > 0 else 0) }}%)
-      </span>
+    </div>
+    <div class="hero-kpi-label">
+      Total Profit ({{ "%.1f"|format((total_profit / total_invested * 100) if total_invested > 0 else 0) }}%)
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">TOTAL INVESTED</div>
-    <div class="stat-value">{{ "%.2f"|format(total_invested) }}€</div>
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon warn">💰</div>
+      <span class="hero-kpi-trend">Invested</span>
+    </div>
+    <div class="hero-kpi-value" style="color: var(--accent-orange);">{{ "%.2f"|format(total_invested) }}€</div>
+    <div class="hero-kpi-label">Total Invested</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">TOTAL WITHDRAWN</div>
-    <div class="stat-value" style="color: var(--accent-orange);">{{ "%.2f"|format(total_withdrawn) }}€</div>
+  <div class="hero-kpi">
+    <div class="hero-kpi-top">
+      <div class="hero-kpi-icon neg">💸</div>
+      <span class="hero-kpi-trend neg">Out</span>
+    </div>
+    <div class="hero-kpi-value" style="color: var(--neg);">{{ "%.2f"|format(total_withdrawn) }}€</div>
+    <div class="hero-kpi-label">Total Withdrawn</div>
   </div>
 </div>
 
-<!-- Bankrolls agrupados por mês -->
-<div class="bankrolls-grouped">
-  {% for month, month_data in bankrolls_by_month.items() %}
-  <div class="month-group">
-    <div class="month-header">
-      <h3 class="month-title">{{ month }}</h3>
-      <span class="month-profit {% if month_data.total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
-        {{ "%.2f"|format(month_data.total_profit) }}€
-      </span>
+<!-- ===== MAIN GRID: Bankroll Cards (70%) + Side Panel (30%) ===== -->
+<div class="bankroll-main-grid">
+  <!-- MAIN COLUMN -->
+  <div>
+    <div class="dash-section-divider">
+      <h2>Bankrolls by Month</h2>
     </div>
-    
-    <div class="bankroll-cards" id="bankroll-cards-{{ loop.index }}">
-      {% for bankroll in month_data.bankrolls %}
-      <div class="bankroll-card-wrapper" id="bankroll-{{ bankroll.id }}">
-        <!-- Card clicável para Funds -->
-        <a href="{{ url_for('manage_funds', roll_id=bankroll.id) }}" class="bankroll-card-link">
-          <div class="bankroll-card {% if bankroll.is_active %}active{% endif %}">
-            <div class="bankroll-card-header">
-              <div class="bankroll-name">
-                {{ bankroll.name }}
-                {% if bankroll.is_active %}
-                <span class="active-badge">● ATIVO</span>
-                {% endif %}
+
+    <div class="bankrolls-grouped">
+      {% for month, month_data in bankrolls_by_month.items() %}
+      <div class="month-group">
+        <div class="month-header">
+          <h3 class="month-title">{{ month }}</h3>
+          <span class="month-profit {% if month_data.total_profit >= 0 %}text-positive{% else %}text-negative{% endif %}">
+            {{ "%.2f"|format(month_data.total_profit) }}€
+          </span>
+        </div>
+        
+        <div class="bankroll-cards" id="bankroll-cards-{{ loop.index }}">
+          {% for bankroll in month_data.bankrolls %}
+          <div class="bankroll-card-wrapper" id="bankroll-{{ bankroll.id }}">
+            <a href="{{ url_for('manage_funds', roll_id=bankroll.id) }}" class="bankroll-card-link">
+              <div class="bankroll-card {% if bankroll.is_active %}active{% endif %}">
+                <div class="bankroll-card-header">
+                  <div class="bankroll-name">
+                    {{ bankroll.name }}
+                    {% if bankroll.is_active %}
+                    <span class="active-badge">● ACTIVE</span>
+                    {% endif %}
+                  </div>
+                  <div class="bankroll-initial">Initial: {{ "%.2f"|format(bankroll.starting_balance) }}€</div>
+                </div>
+                
+                <div class="bankroll-card-stats">
+                  <div class="stat-item">
+                    <span class="stat-number">{{ bankroll.bets_count }}</span>
+                    <span class="stat-label-small">bets</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-number">{{ "%.0f"|format(bankroll.win_rate) }}%</span>
+                    <span class="stat-label-small">Win Rate</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-number">{{ "%.2f"|format(bankroll.avg_odds) }}</span>
+                    <span class="stat-label-small">Avg Odds</span>
+                  </div>
+                </div>
+                
+                <div class="bankroll-card-footer">
+                  <div class="bankroll-active">
+                    Active: {{ "%.2f"|format(bankroll.active_stake) }}€
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">
+                      Free: {{ bankroll.free_bets_count }}
+                    </span>
+                  </div>
+                  <span class="link-green">Funds →</span>
+                </div>
               </div>
-              <div class="bankroll-initial">Initial: {{ "%.2f"|format(bankroll.starting_balance) }}€</div>
-            </div>
+            </a>
             
-            <div class="bankroll-card-stats">
-              <div class="stat-item">
-                <span class="stat-number">{{ bankroll.bets_count }}</span>
-                <span class="stat-label-small">bets</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-number">{{ "%.0f"|format(bankroll.win_rate) }}%</span>
-                <span class="stat-label-small">Win Rate</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-number">{{ "%.2f"|format(bankroll.avg_odds) }}</span>
-                <span class="stat-label-small">Avg Odds</span>
-              </div>
-            </div>
-            
-            <div class="bankroll-card-footer">
-              <div class="bankroll-active">
-                Active: {{ "%.2f"|format(bankroll.active_stake) }}€
-                <span style="color: var(--text-muted); font-size: 0.75rem;">
-                  Free: {{ bankroll.free_bets_count }}
+            <div style="margin-top: 0.5rem; text-align: center;">
+              {% if bankroll.bets_count > 0 %}
+                <span class="btn-delete-bankroll disabled" style="display: inline-block; width: 100%;">
+                  🗑️ Delete ({{ bankroll.bets_count }} bets)
                 </span>
-              </div>
-              <span class="link-green">Funds →</span>
+              {% else %}
+                <button type="button" 
+                        class="btn-delete-bankroll" 
+                        data-id="{{ bankroll.id }}"
+                        data-name="{{ bankroll.name }}"
+                        onclick="deleteBankroll(this)"
+                        style="width: 100%;">
+                  🗑️ Delete Bankroll
+                </button>
+              {% endif %}
             </div>
           </div>
-        </a>
-        
-        <!-- Botão Delete -->
-        <div style="margin-top: 0.5rem; text-align: center;">
-          {% if bankroll.bets_count > 0 %}
-            <span class="btn-delete-bankroll disabled" style="display: inline-block; width: 100%;">
-              🗑️ Delete Bankroll ({{ bankroll.bets_count }} bets)
-            </span>
-          {% else %}
-            <button type="button" 
-                    class="btn-delete-bankroll" 
-                    data-id="{{ bankroll.id }}"
-                    data-name="{{ bankroll.name }}"
-                    onclick="deleteBankroll(this)"
-                    style="width: 100%;">
-              🗑️ Delete Bankroll
-            </button>
-          {% endif %}
+          {% endfor %}
         </div>
+      </div>
+      {% else %}
+      <div class="card-metrika">
+        <p style="text-align:center; color: var(--text-muted); padding: 2rem;">
+          No bankrolls yet. <a href="#createBankrollForm" class="link-green">Create your first one</a>
+        </p>
       </div>
       {% endfor %}
     </div>
   </div>
-  {% else %}
-  <div class="card-metrika">
-    <p style="text-align:center; color: var(--text-muted); padding: 2rem;">
-      No bankrolls yet. <a href="{{ url_for('bankrolls_list') }}" class="link-green">Create your first one</a>
-    </p>
-  </div>
-  {% endfor %}
-</div>
 
-<!-- Botões de ação -->
-<div class="bankroll-actions">
-  <a href="{{ url_for('bankrolls_list') }}" class="btn btn-secondary">+ Create bankroll</a>
-  <span class="tools-label">Tools</span>
-</div>
-
-<!-- Formulário para Criar Bankroll -->
-<div class="card-metrika" style="margin-top: 1.5rem;">
-  <h3 class="card-title-sub">Create Bankroll with Bookmaker Allocation</h3>
-  <form action="{{ url_for('bankrolls_list') }}" method="POST" id="createBankrollForm">
-    <div class="form-grid-2">
-      <div class="form-group-custom">
-        <label>Name</label>
-        <input type="text" name="name" placeholder="e.g. July 2026" required>
-      </div>
-      <div class="form-group-custom">
-        <label>Currency</label>
-        <input type="text" name="currency" value="EUR" required>
+  <!-- SIDE PANEL (30%) -->
+  <div class="dash-side-panel">
+    <!-- Quick Actions -->
+    <div class="side-card">
+      <div class="side-card-title">Quick Actions</div>
+      <div class="quick-actions">
+        <a href="{{ url_for('upload') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📸</span>
+          <span>Upload Bet</span>
+        </a>
+        <a href="{{ url_for('bookmakers_list') }}" class="quick-action-btn">
+          <span class="quick-action-icon">🏢</span>
+          <span>Bookmakers</span>
+        </a>
+        <a href="{{ url_for('stats') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📊</span>
+          <span>Analytics</span>
+        </a>
+        <a href="{{ url_for('export') }}" class="quick-action-btn">
+          <span class="quick-action-icon">📤</span>
+          <span>Export</span>
+        </a>
       </div>
     </div>
-    
-    <div class="form-group-custom">
-      <label>Total Starting Balance (€)</label>
-      <input type="number" step="0.01" name="starting_balance" id="totalStartingBalance" placeholder="0.00" required onchange="updateAllocationTotal()">
-    </div>
-    
-    <div class="form-group-custom">
-      <label>Allocate to Bookmakers</label>
-      <div id="bookmaker-allocations">
-        {% for book in bookmakers %}
-        <div class="allocation-row" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem;">
-          <span style="min-width: 100px; font-weight: 600;">{{ book.name }}</span>
-          <input type="hidden" name="bookmaker_id[]" value="{{ book.id }}">
-          <input type="number" step="0.01" name="bookmaker_allocation[]" 
-                 class="bookmaker-allocation" placeholder="0.00" 
-                 style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem; border-radius: var(--radius-sm);"
-                 onchange="updateAllocationTotal()">
+
+    <!-- Create Bankroll Form -->
+    <div class="side-card" id="createBankrollForm">
+      <div class="side-card-title">Create Bankroll</div>
+      <form action="{{ url_for('bankrolls_list') }}" method="POST" id="createBankrollFormInner">
+        <div class="form-grid-2">
+          <div class="form-group-custom">
+            <label>Name</label>
+            <input type="text" name="name" placeholder="e.g. July 2026" required>
+          </div>
+          <div class="form-group-custom">
+            <label>Currency</label>
+            <input type="text" name="currency" value="EUR" required>
+          </div>
         </div>
-        {% else %}
-        <p style="color: var(--text-muted);">No bookmakers available. <a href="{{ url_for('bookmakers_list') }}" class="link-green">Add one first</a></p>
-        {% endfor %}
-      </div>
-      <small style="color: var(--text-muted); font-size: 0.75rem;">Allocate the total starting balance across bookmakers. Sum must equal total balance.</small>
-      <div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--bg-input); border-radius: var(--radius-sm);">
-        <span>Allocated: <strong id="allocatedTotal">0.00</strong>€ / <strong id="requiredTotal">0.00</strong>€</span>
-        <span id="allocationWarning" style="color: var(--accent-red); display: none; margin-left: 1rem;">⚠️ Not matching!</span>
+        
+        <div class="form-group-custom">
+          <label>Total Starting Balance (€)</label>
+          <input type="number" step="0.01" name="starting_balance" id="totalStartingBalance" placeholder="0.00" required onchange="updateAllocationTotal()">
+        </div>
+        
+        <div class="form-group-custom">
+          <label>Allocate to Bookmakers</label>
+          <div id="bookmaker-allocations">
+            {% for book in bookmakers %}
+            <div class="allocation-row" style="display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="min-width: 90px; font-weight: 600; font-size: 0.82rem;">{{ book.name }}</span>
+              <input type="hidden" name="bookmaker_id[]" value="{{ book.id }}">
+              <input type="number" step="0.01" name="bookmaker_allocation[]" 
+                     class="bookmaker-allocation" placeholder="0.00" 
+                     style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.5rem; border-radius: var(--radius-sm); font-size: 0.82rem;"
+                     onchange="updateAllocationTotal()">
+            </div>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.82rem;">No bookmakers available. <a href="{{ url_for('bookmakers_list') }}" class="link-green">Add one first</a></p>
+            {% endfor %}
+          </div>
+          <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 0.3rem;">Allocate the total starting balance across bookmakers. Sum must equal total balance.</small>
+          <div style="margin-top: 0.5rem; padding: 0.6rem 0.7rem; background: var(--bg-input); border-radius: var(--radius-sm); font-size: 0.8rem;">
+            <span>Allocated: <strong id="allocatedTotal">0.00</strong>€ / <strong id="requiredTotal">0.00</strong>€</span>
+            <span id="allocationWarning" style="color: var(--neg); display: none; margin-left: 0.5rem;">⚠️ Not matching!</span>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem; width: 100%;" id="createBtn">Create Bankroll</button>
+      </form>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="side-card">
+      <div class="side-card-title">Summary</div>
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+          <span style="color: var(--text-muted);">Total Bankrolls</span>
+          <strong>{{ bankrolls|length }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+          <span style="color: var(--text-muted);">Total Bets</span>
+          <strong>{{ bankrolls|sum(attribute='bets_count') if bankrolls else 0 }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+          <span style="color: var(--text-muted);">Bookmakers</span>
+          <strong>{{ bookmakers|length }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+          <span style="color: var(--text-muted);">Active Bankroll</span>
+          <strong style="color: var(--pos);">
+            {% for b in bankrolls if b.is_active %}{{ b.name }}{% endfor %}
+          </strong>
+        </div>
       </div>
     </div>
-    
-    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;" id="createBtn">Create Bankroll</button>
-  </form>
+  </div>
 </div>
 
 <script>
@@ -211,7 +278,6 @@ function deleteBankroll(button) {
   
   console.log('Deleting bankroll ID:', id);
   
-  // Desabilitar o botão para evitar cliques duplos
   button.disabled = true;
   button.textContent = '⏳ Deleting...';
   
@@ -223,7 +289,6 @@ function deleteBankroll(button) {
   })
   .then(function(response) {
     console.log('Response status:', response.status);
-    // Recarregar a página para ver as mudanças
     window.location.reload();
   })
   .catch(function(error) {
@@ -244,10 +309,10 @@ function deleteBankroll(button) {
 
 .btn-delete-bankroll {
   background: transparent;
-  color: var(--accent-red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--neg);
+  border: 1px solid rgba(255, 93, 108, 0.3);
   border-radius: var(--radius-sm);
-  padding: 0.3rem 0.8rem;
+  padding: 0.35rem 0.8rem;
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
@@ -257,8 +322,8 @@ function deleteBankroll(button) {
 }
 
 .btn-delete-bankroll:hover:not(.disabled) {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: var(--accent-red);
+  background: var(--neg-soft);
+  border-color: var(--neg);
 }
 
 .btn-delete-bankroll.disabled {
@@ -270,22 +335,22 @@ function deleteBankroll(button) {
   display: inline-block;
   width: 100%;
   text-align: center;
-  padding: 0.3rem 0.8rem;
+  padding: 0.35rem 0.8rem;
   border-radius: var(--radius-sm);
   font-size: 0.7rem;
   font-weight: 600;
 }
 
 .bankroll-card.active {
-  border-color: var(--accent-green);
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+  border-color: var(--pos);
+  box-shadow: 0 0 20px var(--pos-glow);
 }
 
 .active-badge {
   font-size: 0.55rem;
   font-weight: 700;
-  color: var(--accent-green);
-  background: rgba(16, 185, 129, 0.15);
+  color: var(--pos);
+  background: var(--pos-soft);
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   margin-left: 0.5rem;
@@ -299,7 +364,7 @@ function deleteBankroll(button) {
 }
 
 .bankroll-card-link:hover .bankroll-card {
-  border-color: var(--accent-green);
+  border-color: var(--accent);
   transform: translateY(-2px);
   transition: all 0.2s;
 }

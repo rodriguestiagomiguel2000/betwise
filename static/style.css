@@ -1765,6 +1765,281 @@ input[type="checkbox"]:checked { accent-color: var(--accent); border-color: var(
 }
 
 /* ============================================================
+   LAYOUT ARCHITECTURE — Hero grids, sticky filters, side panels
+   ============================================================ */
+
+/* Hero KPI grid — 4 large cards with visual impact */
+.hero-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1100px) { .hero-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.hero-kpi {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.4rem;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+.hero-kpi::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--pos));
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+}
+
+.hero-kpi:hover {
+  transform: translateY(-4px);
+  border-color: rgba(43, 127, 255, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-kpi:hover::before { opacity: 1; }
+
+.hero-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.hero-kpi-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.hero-kpi-icon.pos { background: var(--pos-soft); }
+.hero-kpi-icon.neg { background: var(--neg-soft); }
+.hero-kpi-icon.warn { background: var(--warn-soft); }
+
+.hero-kpi-trend {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--pos-soft);
+  color: var(--pos);
+}
+
+.hero-kpi-trend.neg { background: var(--neg-soft); color: var(--neg); }
+
+.hero-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.hero-kpi-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* Main + Side panel layout (70/30) */
+.dash-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) { .dash-main-grid { grid-template-columns: 1fr; } }
+
+.dash-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 84px;
+}
+
+@media (max-width: 1100px) {
+  .dash-side-panel { position: static; }
+}
+
+/* Sticky filter bar */
+.sticky-filter-bar {
+  position: sticky;
+  top: 68px;
+  z-index: 40;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.sticky-filter-bar .filter-form { flex: 1; }
+
+/* Horizontal scroll pills for mobile quick-filters */
+.pill-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.pill-filter-row::-webkit-scrollbar { display: none; }
+
+.pill-filter {
+  flex-shrink: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  white-space: nowrap;
+}
+
+.pill-filter:hover { border-color: var(--border-strong); color: var(--text-main); }
+
+.pill-filter.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+/* Section divider */
+.dash-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.75rem 0 1rem;
+}
+
+.dash-section-divider h2 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.dash-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+/* Compact side-panel card */
+.side-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.3rem;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-sm);
+}
+
+.side-card-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Quick action grid in side panel */
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-main);
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.quick-action-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.quick-action-icon {
+  font-size: 1.3rem;
+}
+
+/* Mobile compact bet feed */
+.mobile-feed { display: none; flex-direction: column; gap: 0.75rem; }
+
+@media (max-width: 768px) {
+  .mobile-feed { display: flex !important; }
+  .desktop-only-layout { display: none !important; }
+}
+
+/* Bankroll hero layout */
+.bankroll-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) { .bankroll-hero-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.bankroll-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) { .bankroll-main-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
    MOBILE HEADER
    ============================================================ */
 .mobile-header {
